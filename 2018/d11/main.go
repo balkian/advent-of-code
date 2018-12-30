@@ -7,7 +7,6 @@ import (
 const xdim, ydim = 300, 300
 const code = 8561
 //const code = 18
-const block = 3
 
 func initGrid() [ydim][xdim]int {
 	grid := [ydim][xdim]int{}
@@ -28,29 +27,71 @@ type xy struct {
 	x, y int 
 }
 
-func getMax(grid [ydim][xdim]int) (xy){
-	var pos xy
-	var max int
-	sum := [ydim][xdim]int{}
+func integrate(grid [ydim][xdim]int) (sum [ydim][xdim]int){
+	sum = [ydim][xdim]int{}
 
-	for j:=0; j< ydim-block+1; j++ {
-		for i:=0; i< xdim-block+1; i++ {
-			for tj:=j;tj<j+block;tj++ {
-				for ti:=i;ti<i+block;ti++ {
-					sum[j][i] += grid[tj][ti]
+	var temp int
+
+	for j:=0; j<ydim; j++ {
+		for i:=0; i< xdim; i++ {
+			temp = grid[j][i]
+			if i > 0 {
+				temp += sum[j][i-1]
+			}
+			if j > 0 {
+				temp += sum[j-1][i]
+				if i > 0 {
+					temp -= sum[j-1][i-1]
 				}
 			}
-			if sum[j][i] > max {
-				max = sum[j][i]
+			sum[j][i] = temp
+		}
+	}
+	return sum
+}
+
+func getMax(grid [ydim][xdim]int, block int) (pos xy, power int){
+	var max int
+
+	var val int
+	ahead := block-1
+
+	for j:=0; j< ydim-ahead; j++ {
+		for i:=0; i< xdim-ahead; i++ {
+			val = grid[j+ahead][i+ahead]
+			if i > 0 {
+				val -= grid[j+ahead][i-1]
+			}
+			if j > 0 {
+				val -= grid[j-1][i+ahead]
+				if i > 0 {
+					val += grid[j-1][i-1]
+				}
+			}
+			if val > max {
+				max = val
 				pos = xy{i,j}
 			}
 		}
 	}
-	return pos
+	return pos, max
 }
 
 func main(){
 	g := initGrid()
-	fmt.Println(getMax(g))
+	sum := integrate(g)
+	fmt.Println(getMax(sum, 3))
+	max := 0
+	bs := 0
+	var pos xy
+	for i:=1;i<300;i++ {
+		tp, tm := getMax(sum, i)
+		if tm > max {
+			max = tm
+			bs = i
+			pos = tp
+		}
+	}
+	fmt.Println(pos.x, pos.y, bs)
 
 }
