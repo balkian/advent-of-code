@@ -13,6 +13,34 @@ type Node struct {
 	metadata []int
 }
 
+func (n Node) Sum() int {
+	sum := 0
+ 	for _,c := range n.children {
+		sum += c.Sum()
+	}
+	for _, m := range n.metadata {
+		sum += m
+	}
+	return sum
+}
+
+func (n Node) Sum2() int {
+	if len(n.children) < 1 {
+		return n.Sum()
+	}
+
+	sum := 0
+ 	
+	for _, m := range n.metadata {
+		idx := m-1
+		if idx >= len(n.children) {
+			continue
+		}
+		sum += n.children[idx].Sum2()
+	}
+	return sum
+}
+
 func (n Node) String() string {
 	s := strings.Builder{}
 	prefix := "  "
@@ -43,12 +71,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	license := strings.Split(string(b), " ")
+	license := strings.Split(strings.TrimSpace(string(b)), " ")
 	chunks := make([]int, len(license))
 	for k, v := range license {
 		i, err := strconv.Atoi(v)
 		if err != nil {
-			panic("invalid int")
+			panic(fmt.Errorf("invalid int %s @ %s: %s", v, k, err))
 		}
 		chunks[k] = i
 	}
@@ -56,6 +84,8 @@ func main() {
 
 	_, n := chunksToNode(chunks)
 	fmt.Printf("%s", n)
+	fmt.Println(n.Sum())
+	fmt.Println(n.Sum2())
 
 }
 
@@ -63,20 +93,17 @@ func chunksToNode(chunks []int) (read int, node Node) {
 	nc := chunks[0]
 	nm := chunks[1]
 	node = *NewNode(nc, nm)
-	for i := len(chunks) - nm; i < len(chunks); i++ {
-		fmt.Println(len(chunks), i, nm)
-		node.metadata = append(node.metadata, chunks[i])
+	fmt.Println("Num children: ", nc)
+	read = 2
+	for i:=0; i<nc;i++ {
+		delta, child := chunksToNode(chunks[read:])
+		node.children[i] = child
+		read += delta
 	}
-	chunks = chunks[2 : len(chunks)-nm]
-
-	var idx = 0
-	for idx < len(chunks) {
-		delta, child := chunksToNode(chunks)
-		node.children = append(node.children, child)
-		idx += delta
-		chunks = chunks[idx:len(chunks)]
+	for i := 0; i < nm; i++ {
+		node.metadata[i] = chunks[read]
+		read++
 	}
-
-	return idx + 2 + nm, node
+	return read, node
 
 }
