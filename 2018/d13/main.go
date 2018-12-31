@@ -106,7 +106,6 @@ type cart struct {
 	pos   xy
 	dir   xy
 	turns int
-	dead  bool
 }
 
 var cartGlyphs = map[xy]tile{
@@ -291,17 +290,20 @@ func (b *board) Step() []xy {
 	sort.Slice(b.carts, func(i, j int) bool { return b.carts[i].pos.Less(b.carts[j].pos) })
 loop:
 	for ix, c := range b.carts {
+		if c == nil {
+			continue
+		}
 		c.Move()
 		t := b.roads.get(c.pos)
 		for jx, c2 := range b.carts {
-			if ix == jx {
+			if ix == jx || c2 == nil {
 				continue
 			}
 			if c.pos == c2.pos {
 				crashed = append(crashed, c.pos)
 				// b.roads.set(c.pos, crash)
-				c.dead = true
-				c2.dead = true
+				b.carts[ix] = nil
+				b.carts[jx] = nil
 				continue loop
 			}
 		}
@@ -309,7 +311,7 @@ loop:
 	}
 	nc := make([]*cart, 0)
 	for _, c := range b.carts {
-		if c.dead {
+		if c == nil {
 			continue
 		}
 		nc = append(nc, c)
