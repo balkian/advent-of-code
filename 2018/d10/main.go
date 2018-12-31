@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strings"
+	"time"
 )
 
 type xy struct {
@@ -15,40 +17,72 @@ type speed struct {
 	x, y int
 }
 
-
 type point struct {
-	pos xy
+	pos   xy
 	speed speed
 }
 
-
 type board struct {
-	grid map[xy]bool
 	points []*point
+	max    xy
+	min    xy
+	res    int
+	t      int
 }
 
+func NewBoard(points []*point) board {
+	b := board{points: points}
+	b.res = 50
+	b.update(0)
+	return b
+}
 
 func (b board) String() string {
-	max := xy{}
-	min := xy{}
-	for pos := range b.grid {
-		if pos.x > max.x {
-			max.x = pos.x
+	s := strings.Builder{}
+
+	dx := b.max.x - b.min.x
+	dy := b.max.y - b.min.y
+
+	var h, v int
+
+	f := 1.0
+
+	if dx > dy {
+		f = float64(b.res) / float64(dx)
+		h = b.res
+		v = int(f * float64(dy))
+		if v == 0 {
+			v = 1
 		}
-		if pos.y > max.y {
-			max.y = pos.y
-		}
-		if min.x == 0 || pos.x < min.x {
-			min.x = pos.x
-		}
-		if min.y == 0 || pos.y < min.y {
-			min.y = pos.y
+	} else {
+		f = float64(b.res) / float64(dy)
+		v = b.res
+		h = int(f * float64(dx))
+		if h == 0 {
+			h = 1
 		}
 	}
-	s := strings.Builder{}
-	for j:=min.y; j<=max.y; j++ {
-		for i:=min.x; i<=max.x; i++ {
-			p := b.grid[xy{x:i,y:j}]
+
+	grid := make([][]bool, v)
+	for j := 0; j < v; j++ {
+		grid[j] = make([]bool, h)
+	}
+	for _, p := range b.points {
+		x := int(float64(p.pos.x-b.min.x) * f)
+		y := int(float64(p.pos.y-b.min.y) * f)
+		if x == h {
+			x = h - 1
+		}
+		if y == v {
+			y = v - 1
+		}
+		// fmt.Println(x, y, h, v, dx, dy, f)
+		grid[y][x] = true
+	}
+
+	for j := 0; j < v; j++ {
+		for i := 0; i < h; i++ {
+			p := grid[j][i]
 			if p {
 				s.WriteString("#")
 				continue
@@ -60,16 +94,32 @@ func (b board) String() string {
 	return s.String()
 }
 
-func (b *board) update(delta float64, factor int) {
-	newgrid := map[xy]bool{}
+func (b *board) update(delta int) {
+	max := xy{x: math.MinInt64, y: math.MinInt64}
+	min := xy{x: math.MaxInt64, y: math.MaxInt64}
 	for _, p := range b.points {
-		p.pos.x = p.pos.x+int(float64(p.speed.x)*delta)
-		p.pos.y = p.pos.y+int(float64(p.speed.y)*delta)
-		newgrid[xy{p.pos.x/factor, p.pos.y/factor}] = true
-	}
-	b.grid = newgrid
-}
+		pos := p.pos
 
+		pos.x = pos.x + p.speed.x*delta
+		pos.y = pos.y + p.speed.y*delta
+		if pos.x > max.x {
+			max.x = pos.x
+		}
+		if pos.y > max.y {
+			max.y = pos.y
+		}
+		if pos.x < min.x {
+			min.x = pos.x
+		}
+		if pos.y < min.y {
+			min.y = pos.y
+		}
+		p.pos = pos
+	}
+	b.max = max
+	b.min = min
+	b.t += delta
+}
 
 func main() {
 	f, err := os.Open("input.txt")
@@ -83,19 +133,19 @@ func main() {
 		fmt.Sscanf(s.Text(), "position=<%d, %d> velocity=<%d, %d>", &(p.pos.x), &(p.pos.y), &(p.speed.x), &(p.speed.y))
 		points = append(points, &p)
 	}
-	b := board{}
-	b.points = points
-	// fmt.Println(b)
-	b.update(10658, 1)
-	for i:=0; i< 1; i++ {
-		b.update(1, 1)
-		fmt.Println(i)
-		for j:=0; j< 50; j++ {
+	b := NewBoard(points)
+	// 10658
+	init := 10650
+	b.update(init)
+	for i := 0; i < 11000; i++ {
+		b.update(1)
+		fmt.Println(init+i, b.t)
+		for j := 0; j < 50; j++ {
 			fmt.Print("#")
 		}
 		fmt.Println()
-		fmt.Println(b)
+		fmt.Println(b.String())
+		time.Sleep(200 * time.Millisecond)
 	}
-
 
 }
