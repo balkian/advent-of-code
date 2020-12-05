@@ -25,7 +25,7 @@ fn part2(map: &Vec<String>) -> i64 {
 }
 
 fn main() {
-    let it: Vec<String> = aoc_utils::file_iter();
+    let it: Vec<String> = aoc_utils::file_iter().collect();
     let p1 = part1(&it, 3, 1);
     println!("P1: Encountered {:} trees", p1);
     let p2 = part2(&it);

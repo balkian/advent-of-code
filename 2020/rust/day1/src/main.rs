@@ -59,7 +59,7 @@ where
 }
 
 fn main() {
-    let it: Vec<i32> = aoc_utils::file_iter();
+    let it: Vec<i32> = aoc_utils::file_iter::<i32>().collect();
     // dbg!(&it);
     // part1(&it);
     part2(&it, 2);

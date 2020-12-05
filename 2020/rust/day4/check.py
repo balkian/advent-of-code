@@ -1,7 +1,12 @@
 import re
+import sys
 
 passports = []
-with open('input.txt') as f:
+FILE = 'input.txt'
+if len(sys.argv) > 1:
+    FILE = sys.argv[1]
+
+with open(FILE) as f:
     passport = {}
     for line in f:
         if 'text' not in passport:

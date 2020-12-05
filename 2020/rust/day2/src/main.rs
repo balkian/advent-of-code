@@ -29,9 +29,9 @@ impl Password {
     }
 }
 
-fn solve<'a, T>(it: T)
+fn solve<T>(it: T)
 where
-    T: IntoIterator<Item = &'a String>,
+    T: IntoIterator<Item=String>,
 {
     let re = Regex::new(r"(?P<min>\d+)-(?P<max>\d*) (?P<letter>[a-z]+): (?P<password>.+)").unwrap();
 
@@ -39,7 +39,7 @@ where
     let mut count_2 = 0;
 
     for line in it {
-        let caps = re.captures(line).unwrap();
+        let caps = re.captures(&line).unwrap();
         let p = Password {
             min: caps.name("min").unwrap().as_str().parse().unwrap(),
             max: caps.name("max").unwrap().as_str().parse().unwrap(),
@@ -59,6 +59,6 @@ where
 }
 
 fn main() {
-    let it: Vec<String> = aoc_utils::file_iter();
-    solve(&it);
+    let it = aoc_utils::file_iter::<String>();
+    solve(it);
 }

@@ -1,0 +1,153 @@
+/// This implementation is closer to the Python one: we use hashmaps instead
+/// of creating a custom struct.
+///
+
+use std::collections::HashMap;
+// use log::{debug};
+use lazy_static::lazy_static;
+use rayon::prelude::*;
+use regex::Regex;
+
+struct PassIter<'a>{
+    inner:  &'a mut (dyn Iterator<Item=String> + 'a + Send)
+}
+
+type Passport = HashMap<String,String>;
+
+fn new<'a>(it: &'a mut (dyn Iterator<Item=String> + 'a + Send)) -> PassIter {
+    PassIter{
+        inner: it,
+    }
+}
+lazy_static! {
+    static ref COLOR: Regex = Regex::new(r"#([0-9]|[a-f]){6}").unwrap();
+}
+
+impl<'a> Iterator for PassIter<'a> {
+    type Item = Passport;
+
+    // The method that generates each item
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut sofar: Passport = HashMap::new();
+
+        loop {
+            match self.inner.next() {
+                Some(s) => {
+                    if s.is_empty() {
+                        return Some(sofar);
+                    }
+                    s.split(" ").for_each(|tok| {
+                        let sp = tok.split(":").collect::<Vec<&str>>();
+                        sofar.insert(sp[0].into(), sp[1].into());
+                    });
+                    continue
+                },
+                None if sofar.is_empty() => {
+                    return None;
+                },
+                None => {
+                    return Some(sofar);
+                }
+            }
+        }
+
+    }
+}
+
+
+fn check_part1<'a>(x: &'a Passport) -> bool {
+    let count = x.keys().count();
+    count >7 || (count==7 && !x.contains_key("cid"))
+}
+
+fn check_part2<'a>(x: &'a Passport) -> Option<&'a Passport> {
+    let byr = x.get("byr")?.parse::<u32>().ok()?;
+    if byr < 1920 || byr > 2002 {
+        return None
+    }
+
+    let iyr = x.get("iyr")?.parse::<u32>().ok()?;
+    if iyr < 2010 || iyr > 2020 {
+        return None
+    }
+
+    let eyr = x.get("eyr")?.parse::<u32>().ok()?;
+    if eyr < 2020 || eyr > 2030 {
+        return None
+    }
+
+    let hgt = x.get("hgt")?;
+    if hgt.len() < 3 {
+        return None
+    }
+    let (min, max) = match &hgt[hgt.len()-2..] {
+        "cm" => (150, 193),
+        "in" => (59, 76),
+        x => {dbg!{x}; return None},
+    };
+
+    let value = hgt[..hgt.len()-2].parse::<u32>().ok()?;
+
+    if value < min || value > max {
+        return None
+    }
+
+    match x.get("ecl")?.as_str() {
+        "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth" => {}
+        _ => return None
+    };
+
+    match x.get("hcl") {
+        None => return None,
+        Some(hcl) if COLOR.is_match(hcl) => {},
+        Some(_) => return None,
+    };
+
+    match x.get("pid") {
+        None => return None,
+        Some(pid) if pid.len() != 9 => {
+            return None;
+        },
+        Some(pid) => {
+            let pid: i64 = pid.parse().ok()?;
+
+            if pid >= 10e10 as i64 {
+                return None;
+            }
+        }
+    };
+    Some(x)
+}
+
+
+pub fn solve_hashmap<T: Iterator<Item=String> + Send>(it: T, par: bool) {
+    let it = &mut it.into_iter();
+    if par {
+        let valid: (u64, u64) = new(it)
+            .par_bridge()
+            .filter(|x| check_part1(&x))
+            .fold(|| (0, 0), |mut c, x| {
+                if check_part2(&x).is_some() {
+                    c.1 += 1;
+                }
+                c.0 += 1;
+                c
+            })
+            .reduce(|| (0,0), |sum, i| (sum.0 + i.0, sum.1 + i.1));
+        println!("Valid in part 1: {:}", valid.0);
+        println!("Valid in part 2: {:}", valid.1);
+    } else {
+        let valid: (u64, u64) = new(it)
+            .filter(|x| check_part1(&x))
+            .fold((0, 0), |mut c, x| {
+                if check_part2(&x).is_some() {
+                    c.1 += 1;
+                }
+                c.0 += 1;
+                c
+            });
+            // .fold((0,0), |sum, i| (sum.0 + i.0, sum.1 + i.1));
+        println!("Valid in part 1: {:}", valid.0);
+        println!("Valid in part 2: {:}", valid.1);
+    }
+}
