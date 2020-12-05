@@ -36,8 +36,8 @@ impl<'a> Iterator for PassIter<'a> {
                     if s.is_empty() {
                         return Some(sofar);
                     }
-                    s.split(" ").for_each(|tok| {
-                        let sp = tok.split(":").collect::<Vec<&str>>();
+                    s.split(' ').for_each(|tok| {
+                        let sp = tok.split(':').collect::<Vec<&str>>();
                         sofar.insert(sp[0].into(), sp[1].into());
                     });
                     continue
@@ -55,24 +55,24 @@ impl<'a> Iterator for PassIter<'a> {
 }
 
 
-fn check_part1<'a>(x: &'a Passport) -> bool {
+fn check_part1(x: &Passport) -> bool {
     let count = x.keys().count();
     count >7 || (count==7 && !x.contains_key("cid"))
 }
 
-fn check_part2<'a>(x: &'a Passport) -> Option<&'a Passport> {
+fn check_part2(x: &Passport) -> Option<&Passport> {
     let byr = x.get("byr")?.parse::<u32>().ok()?;
-    if byr < 1920 || byr > 2002 {
+    if !(1920..=2020).contains(&byr) {
         return None
     }
 
     let iyr = x.get("iyr")?.parse::<u32>().ok()?;
-    if iyr < 2010 || iyr > 2020 {
+    if !(2010..=2020).contains(&iyr) {
         return None
     }
 
     let eyr = x.get("eyr")?.parse::<u32>().ok()?;
-    if eyr < 2020 || eyr > 2030 {
+    if !(2020..=2030).contains(&eyr) {
         return None
     }
 
@@ -120,10 +120,9 @@ fn check_part2<'a>(x: &'a Passport) -> Option<&'a Passport> {
 }
 
 
-pub fn solve_hashmap<T: Iterator<Item=String> + Send>(it: T, par: bool) {
-    let it = &mut it.into_iter();
+pub fn solve_hashmap<T: Iterator<Item=String> + Send>(mut it: T, par: bool) {
     if par {
-        let valid: (u64, u64) = new(it)
+        let valid: (u64, u64) = new(&mut it)
             .par_bridge()
             .filter(|x| check_part1(&x))
             .fold(|| (0, 0), |mut c, x| {
@@ -137,7 +136,7 @@ pub fn solve_hashmap<T: Iterator<Item=String> + Send>(it: T, par: bool) {
         println!("Valid in part 1: {:}", valid.0);
         println!("Valid in part 2: {:}", valid.1);
     } else {
-        let valid: (u64, u64) = new(it)
+        let valid: (u64, u64) = new(&mut it)
             .filter(|x| check_part1(&x))
             .fold((0, 0), |mut c, x| {
                 if check_part2(&x).is_some() {

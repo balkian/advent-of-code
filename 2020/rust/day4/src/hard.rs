@@ -96,21 +96,21 @@ impl Passport {
 
     fn check2(&self) -> Result<(), String> {
         self.byr
-            .filter(|&x| x >= 1920 && x <= 2002)
+            .filter(|&x| (1920..=2002).contains(&x))
             .ok_or(format!("invalid byr: {:?}", self.byr))?;
 
         self.iyr
-            .filter(|&x| 2010 <= x && x <= 2020)
+            .filter(|&x| (2010..=2020).contains(&x))
             .ok_or(format!("invalid iyr: {:?}", self.iyr))?;
 
         self.eyr
-            .filter(|&x| 2020 <= x && x <= 2030)
+            .filter(|&x| (2020..=2030).contains(&x))
             .ok_or(format!("invalid eyr: {:?}", self.eyr))?;
 
         let max: u32;
         let min: u32;
 
-        match self.units.as_ref().map(|x| x.as_str()) {
+        match self.units.as_deref() {
             None => return Err("no units provided".into()),
             // Requires feature: destructuring assignments
             Some("cm") => (min, max) = (150, 193),
@@ -127,7 +127,7 @@ impl Passport {
             }
         }
 
-        match self.hcl.as_ref().map(|x| x.as_str()) {
+        match self.hcl.as_deref() {
             None => Err("no hcl".into()),
             Some(hcl) if COLOR.is_match(hcl) => Ok(()),
             Some(hcl) => Err(format!("invalid hcr: {}", hcl)),
@@ -220,7 +220,7 @@ pub fn solve<T: IntoIterator<Item = String>>(it: T) {
 }
 
 /// Solve part1 and part2 using parallel code and a channel
-pub fn solve_par<'a, T>(it: T)
+pub fn solve_par<T>(it: T)
 where
     T: 'static + Send + IntoIterator<Item = String>,
 {
