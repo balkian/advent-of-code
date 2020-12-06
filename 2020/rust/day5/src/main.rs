@@ -1,4 +1,3 @@
-use aoc_utils;
 use std::collections::HashSet;
 
 fn parse_num(mut s: String)-> isize {
@@ -26,7 +25,7 @@ fn main() {
         }
     }
     let mut candidates: Vec<isize> = candidates.into_iter().collect();
-    candidates.sort();
+    candidates.sort_unstable();
     println!("Candidates: {:?}", candidates);
     let your_seat = candidates[1];
     println!("Your seat is: {:?}", your_seat);
