@@ -1,21 +1,3 @@
-use aoc_utils;
-
-// fn part1<'a,T>(it: T) -> Option<i32>
-// where
-//     T: IntoIterator<Item=&'a i32>,
-// {
-
-//     let mut nums = Vec::<i32>::new();
-//     for num in it {
-//         if nums.contains(num) {
-//             println!("Found: {:} - {:}", num, num*(2020-num));
-//             return Some(*num);
-//         }
-//         nums.push(2020-*num);
-//     }
-//     None
-// }
-
 #[derive(Debug)]
 struct Mix {
     remaining: i32,
@@ -37,13 +19,13 @@ where
                 others.push(*num);
                 let new_opt = Mix {
                     remaining: opt.remaining - num,
-                    others: others,
+                    others,
                 };
                 if new_opt.remaining == 0 && new_opt.others.len() == cap {
                     println!(
                         "Found {:?}. {:}",
                         new_opt.others,
-                        new_opt.others.iter().fold(1, |a, b| a * b)
+                        new_opt.others.iter().product::<i32>()
                     );
                 }
                 new_opts.push(new_opt);

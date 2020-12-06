@@ -1,5 +1,3 @@
-use aoc_utils;
-
 use regex::Regex;
 
 #[derive(Debug)]

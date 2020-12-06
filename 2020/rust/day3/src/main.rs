@@ -1,6 +1,4 @@
-use aoc_utils;
-
-fn part1(map: &Vec<String>, slope_x: usize, slope_y: usize) -> i64 {
+fn part1(map: &[String], slope_x: usize, slope_y: usize) -> i64 {
     let mut pos_x = 0;
     let mut trees = 0;
     for i in (0..map.len()).step_by(slope_y) {
@@ -13,12 +11,12 @@ fn part1(map: &Vec<String>, slope_x: usize, slope_y: usize) -> i64 {
     trees
 }
 
-fn part2(map: &Vec<String>) -> i64 {
+fn part2(map: &[String]) -> i64 {
     let slopes = vec!((1,1), (3,1), (5,1), (7,1), (1,2));
     let mut count = 1;
     for (slope_x, slope_y) in slopes {
         // dbg!(slope_x, slope_y);
-        count = count * part1(&map, slope_x, slope_y);
+        count *= part1(&map, slope_x, slope_y);
     }
     // println!("{:}", count);
     count
