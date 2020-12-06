@@ -5,7 +5,7 @@ mod hard;
 mod hashmap;
 
 use hard::{solve, solve_par, solve_par2};
-use hashmap::{solve_hashmap};
+use hashmap::{solve_hashmap,solve_hashmap_par,solve_hashmap2};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -22,14 +22,18 @@ fn main() {
         }
         Some("--hashmap") => {
             println!("Running synchronously using a Hashmap ");
-            solve_hashmap(it, false);
+            solve_hashmap(it);
         }
         Some("--hashmap-par") => {
             println!("Running in parallel using a Hashmap ");
-            solve_hashmap(it, true);
+            solve_hashmap_par(it);
+        },
+        Some("--hashmap2") => {
+            println!("Running a Hashmap in functional style using helpers from aoc_utils");
+            solve_hashmap2();
         },
         Some("--help") => {
-            println!("Available methods: --par2, --par, --hashmap, --hashmap-par");
+            println!("Available methods: --par2, --par, --hashmap, --hashmap-par --hashmap2");
         }
         _ => {
             println!("Solving using a struct and single-threaded code.");
