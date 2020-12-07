@@ -9,4 +9,3 @@ edition = "2018"
 [dependencies]
 
 aoc_utils = {path= "../aoc_utils"}
-regex = "1"

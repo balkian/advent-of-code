@@ -57,6 +57,6 @@ where
 }
 
 fn main() {
-    let it = aoc_utils::file_iter::<String>();
+    let it = aoc_utils::file_iter_parsed::<String>();
     solve(it);
 }

@@ -297,7 +297,7 @@ pub fn solve_par2() {
     let count_1;
     let count_2;
 
-    let it = aoc_utils::file_iter_plain();
+    let it = aoc_utils::file_iter();
     let mut finished = false;
 
     let pit = it.into_iter().batching(|it| {

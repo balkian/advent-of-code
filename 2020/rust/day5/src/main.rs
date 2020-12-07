@@ -10,7 +10,7 @@ fn parse_num(mut s: String)-> isize {
 
 fn main() {
     let mut set: HashSet<isize> = HashSet::new();
-    for i in aoc_utils::file_iter_plain()
+    for i in aoc_utils::file_iter()
         .map(parse_num) {
             set.insert(i);
         }

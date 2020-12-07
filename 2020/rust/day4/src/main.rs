@@ -10,7 +10,7 @@ use hashmap::{solve_hashmap,solve_hashmap_par,solve_hashmap2};
 fn main() {
     let args: Vec<String> = env::args().collect();
     pretty_env_logger::init();
-    let it = aoc_utils::file_iter_plain();
+    let it = aoc_utils::file_iter();
     match args.get(2).map(String::as_str) {
         Some("--par2") => {
             println!("Running in parallel using rayon");
