@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-fn parse_num(mut s: String)-> isize {
+fn parse_num(mut s: String) -> isize {
     s = s.replace("B", "1");
     s = s.replace("F", "0");
     s = s.replace("R", "1");
@@ -10,18 +10,17 @@ fn parse_num(mut s: String)-> isize {
 
 fn main() {
     let mut set: HashSet<isize> = HashSet::new();
-    for i in aoc_utils::file_iter()
-        .map(parse_num) {
-            set.insert(i);
-        }
+    for i in aoc_utils::file_iter().map(parse_num) {
+        set.insert(i);
+    }
     println!("The highest seat is: {:?}", set.iter().max().unwrap());
     let mut candidates = HashSet::new();
     for i in &set {
-        if !set.contains(&(i+1)) {
-            candidates.insert(i+1);
+        if !set.contains(&(i + 1)) {
+            candidates.insert(i + 1);
         }
-        if !set.contains(&(i-1)){
-            candidates.insert(i-1);
+        if !set.contains(&(i - 1)) {
+            candidates.insert(i - 1);
         }
     }
     let mut candidates: Vec<isize> = candidates.into_iter().collect();

@@ -31,7 +31,7 @@ where
     I: Iterator<Item = String> + Send,
     FM: Fn(String) -> M,
     FR: Fn(Vec<M>) -> R,
-    FS: Fn(&String, &Vec<M>) -> bool,
+    FS: Fn(&str, &[M]) -> bool,
 {
     inner: I,
     map: FM,
@@ -56,7 +56,7 @@ where
     I: Iterator<Item = String> + Send,
     FM: Fn(String) -> M,
     FR: Fn(Vec<M>) -> R,
-    FS: Fn(&String, &Vec<M>) -> bool,
+    FS: Fn(&str, &[M]) -> bool,
 {
     BlockIter {
         inner,
@@ -66,7 +66,7 @@ where
     }
 }
 
-pub fn default_split<T>(line: &String, _sofar: &Vec<T>) -> bool {
+pub fn default_split<T>(line: &str, _sofar: &[T]) -> bool {
     line.is_empty()
 }
 
@@ -75,7 +75,7 @@ where
     I: Iterator<Item = String> + Send,
     FM: Fn(String) -> M,
     FR: Fn(Vec<M>) -> R,
-    FS: Fn(&String, &Vec<M>) -> bool,
+    FS: Fn(&str, &[M]) -> bool,
 {
     type Item = R;
 

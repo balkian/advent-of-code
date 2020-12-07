@@ -6,13 +6,13 @@ fn part1(map: &[String], slope_x: usize, slope_y: usize) -> i64 {
         if map[i].chars().nth(pos_x).unwrap() == '#' {
             trees += 1;
         }
-        pos_x = (pos_x+slope_x) % map[i].len();
+        pos_x = (pos_x + slope_x) % map[i].len();
     }
     trees
 }
 
 fn part2(map: &[String]) -> i64 {
-    let slopes = vec!((1,1), (3,1), (5,1), (7,1), (1,2));
+    let slopes = vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)];
     let mut count = 1;
     for (slope_x, slope_y) in slopes {
         // dbg!(slope_x, slope_y);

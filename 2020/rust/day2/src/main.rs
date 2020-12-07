@@ -20,8 +20,8 @@ impl Password {
     }
     fn valid_2(&self) -> bool {
         // dbg!{&self.password, &self.min, &self.max, &self.password.len()};
-        let c1 = self.password.chars().nth((self.min as usize)-1).unwrap() ;
-        let c2 = self.password.chars().nth((self.max as usize)-1).unwrap() ;
+        let c1 = self.password.chars().nth((self.min as usize) - 1).unwrap();
+        let c2 = self.password.chars().nth((self.max as usize) - 1).unwrap();
 
         (c1 == self.letter) ^ (c2 == self.letter)
     }
@@ -29,7 +29,7 @@ impl Password {
 
 fn solve<T>(it: T)
 where
-    T: IntoIterator<Item=String>,
+    T: IntoIterator<Item = String>,
 {
     let re = Regex::new(r"(?P<min>\d+)-(?P<max>\d*) (?P<letter>[a-z]+): (?P<password>.+)").unwrap();
 
@@ -41,7 +41,13 @@ where
         let p = Password {
             min: caps.name("min").unwrap().as_str().parse().unwrap(),
             max: caps.name("max").unwrap().as_str().parse().unwrap(),
-            letter: caps.name("letter").unwrap().as_str().chars().next().unwrap(),
+            letter: caps
+                .name("letter")
+                .unwrap()
+                .as_str()
+                .chars()
+                .next()
+                .unwrap(),
             password: caps.name("password").unwrap().as_str().into(),
         };
         if p.valid_1() {
