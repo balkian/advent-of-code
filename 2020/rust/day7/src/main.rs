@@ -2,24 +2,27 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::{HashMap, VecDeque};
 
+type BagCounter = HashMap<String, Vec<(usize, String)>>;
+type Fits = HashMap<String, Vec<String>>;
+
 lazy_static! {
     static ref OUTER: Regex =
         Regex::new(r"(?P<bag>[\w\s]+) bag[s]? contain (?P<others>.*).").unwrap();
     static ref INNER: Regex = Regex::new(r"(?P<number>\d+) (?P<bag>[\s\w]+) bag[s]?").unwrap();
 }
 
-fn calculate(tree: &HashMap<String, Vec<String>>) {
-    let mut opts: Vec<&String> = tree
+fn calculate(fits: &Fits) {
+    let mut opts: Vec<&String> = fits
         .get("shiny gold")
         .expect("Shiny gold is not contained in any other bag")
         .iter()
         .collect();
+
+    // We have processed 0..ix  options
     let mut idx = 0;
 
     while idx < opts.len() {
-        let candidate = opts[idx];
-
-        if let Some(others) = tree.get(candidate) {
+        if let Some(others) = fits.get(opts[idx]) {
             for o in others {
                 if opts.contains(&o) {
                     continue;
@@ -32,7 +35,7 @@ fn calculate(tree: &HashMap<String, Vec<String>>) {
     println!("Solution to part 1: {:}", opts.len());
 }
 
-fn calculate2(contains: &HashMap<String, Vec<(usize, String)>>) {
+fn calculate2(counter: &BagCounter) {
     let target = &"shiny gold".to_string();
     let mut missing: VecDeque<&String> = VecDeque::new();
     missing.push_front(target);
@@ -42,23 +45,19 @@ fn calculate2(contains: &HashMap<String, Vec<(usize, String)>>) {
     while let Some(candidate) = missing.pop_front() {
         let mut count = 0;
         let mut found = true;
-        let next = match contains.get(candidate) {
-            Some(c) => c,
-            None => {
-                calculated.insert(&candidate, 1);
-                continue;
-            }
-        };
-        for (times, inner) in next {
-            match calculated.get(inner) {
-                Some(num) => count += times * num,
-                None => {
-                    missing.push_back(&inner);
-                    found = false;
+        if let Some(next) = counter.get(candidate) {
+            for (times, inner) in next {
+                match calculated.get(inner) {
+                    Some(num) => count += times * num,
+                    None => {
+                        found = false;
+                        if !missing.contains(&inner) {
+                            missing.push_back(&inner);
+                        }
+                    }
                 }
             }
-            // dbg!{&candidate,&inner,&found,&missing};
-        }
+        };
         if found {
             calculated.insert(candidate, count + 1);
         } else {
@@ -69,18 +68,18 @@ fn calculate2(contains: &HashMap<String, Vec<(usize, String)>>) {
 }
 
 fn main() {
-    let mut deps = HashMap::<String, Vec<String>>::new();
-    let mut contains = HashMap::<String, Vec<(usize, String)>>::new();
+    let mut fits = Fits::new();
+    let mut contains: BagCounter = BagCounter::new();
+
     for line in aoc_utils::file_iter() {
         let caps = OUTER.captures(line.as_str()).unwrap();
         let outer = caps.name("bag").unwrap().as_str().to_string();
         let others_str = caps.name("others").unwrap().as_str();
-        // dbg!{&others_str};
         for i in INNER.captures_iter(others_str) {
             let num: usize = i.name("number").unwrap().as_str().parse().unwrap();
             let inner = i.name("bag").unwrap().as_str().to_string();
 
-            deps.entry(inner.clone())
+            fits.entry(inner.clone())
                 .or_insert_with(Vec::new)
                 .push(outer.clone());
 
@@ -90,6 +89,6 @@ fn main() {
                 .push((num, inner));
         }
     }
-    calculate(&deps);
+    calculate(&fits);
     calculate2(&contains);
 }
