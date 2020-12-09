@@ -1,9 +1,10 @@
 use std::collections::VecDeque;
 
-use aoc_utils::{clap, clap_app, file_iter_clap};
+use aoc_utils::{clap, app, file_iter_clap};
 
 fn main() {
-    let matches = clap_app(9)
+    let matches = app("9")
+        .version("2.0")
         .arg(clap::Arg::with_name("window")
              .short("w")
              .default_value("25")

@@ -1,4 +1,3 @@
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -18,9 +17,8 @@ where
 }
 
 pub fn file_iter() -> impl Iterator<Item = String> + Send {
-    let args: Vec<String> = env::args().collect();
-    let input = &String::from("input.txt");
-    let fname = args.get(1).unwrap_or(input);
+    let matches = app("unspecified").get_matches();
+    let fname = matches.value_of("input").expect("no input specified");
     info!("Opening file: {}", fname);
     file_iter_from(fname)
 
@@ -125,7 +123,7 @@ where
     blocks(file_iter(), map, reduce, default_split)
 }
 
-pub fn clap_app<'a>(day: usize) -> clap::App<'a,'a> {
+pub fn app<'a>(day: &str) -> clap::App<'a,'a> {
     clap::App::new(format!("Advent of Code 2020. Day {:}", day))
         .version("1.0")
         .author("Fernando Sánchez <aoc@sinpapel.es>")
