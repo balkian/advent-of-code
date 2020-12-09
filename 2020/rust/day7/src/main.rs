@@ -69,7 +69,7 @@ fn calculate2(counter: &BagCounter) {
 
 fn main() {
     let mut fits = Fits::new();
-    let mut contains: BagCounter = BagCounter::new();
+    let mut contains = BagCounter::new();
 
     for line in aoc_utils::file_iter() {
         let caps = OUTER.captures(line.as_str()).unwrap();
@@ -80,12 +80,12 @@ fn main() {
             let inner = i.name("bag").unwrap().as_str().to_string();
 
             fits.entry(inner.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(outer.clone());
 
             contains
                 .entry(outer.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((num, inner));
         }
     }

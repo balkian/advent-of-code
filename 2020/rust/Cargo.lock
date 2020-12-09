@@ -164,9 +164,14 @@ version = "0.1.0"
 dependencies = [
  "aoc_utils",
  "lazy_static",
- "log",
- "pretty_env_logger",
  "regex",
+]
+
+[[package]]
+name = "day9"
+version = "0.1.0"
+dependencies = [
+ "aoc_utils",
 ]
 
 [[package]]
