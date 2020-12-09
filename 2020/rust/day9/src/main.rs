@@ -12,7 +12,7 @@ fn main() {
 
     let w_size = clap::value_t_or_exit!(matches.value_of("window"), usize);
 
-    let numbers: Vec<usize> = file_iter_clap(matches)
+    let numbers: Vec<usize> = file_iter_clap(&matches)
         .map(|x| x.parse().expect("could not parse number"))
         .collect();
 

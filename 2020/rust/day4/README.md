@@ -57,54 +57,43 @@ cargo run --release input-big.txt --hashmap-par  196.47s user 146.90s system 753
 I'm probably doing something wrong with the references, and it must be copying data needlessly around threads.
 I might revisit this some other time.
 
-# Logs 
+# Hyperfine 
 
-For future reference, here are the results for every implementation:
+For future reference, here are the results for every rust implementation using hyperfine and a 8MB file:
 
 ```
- ❯ time cargo run --release input-big.txt --par
-    Finished release [optimized] target(s) in 0.01s
-     Running `/home/j/git/balkian/advent-of-code/2020/rust/target/release/day4 input-big.txt --par`
-Running in parallel using a thread
-Valid: 5644801 / 7049729
-Valid2: 4014080 / 7049729
-cargo run --release input-big.txt --par  108.55s user 4.29s system 640% cpu 17.606 total
->>> elapsed time 18s
+❯ du -xsh input-big.txt
+131M    input-big.txt
+❯ hyperfine --prepare 'cargo build --release'  '../target/release/day4 --variant {variant} input-big.txt' -L variant Simple,Rayon,Channel,Hashmap,HashmapPar,Hashmap2
+Benchmark #1: ../target/release/day4 --variant Simple input-big.txt
+  Time (mean ± σ):     13.270 s ±  0.099 s    [User: 13.945 s, System: 0.636 s]
+  Range (min … max):   13.160 s … 13.428 s    10 runs
 
- j@panther ~/g/b/a/2/r/day4    master ⁝ ✱ ?
- ❯ time cargo run --release input-big.txt --par2                                             [10:40:35]
-    Finished release [optimized] target(s) in 0.01s
-     Running `/home/j/git/balkian/advent-of-code/2020/rust/target/release/day4 input-big.txt --par2`
-Running in parallel using rayon
-Valid: 5644801 / 7049729
-Valid2: 4014080 / 7049729
-cargo run --release input-big.txt --par2  108.53s user 4.39s system 651% cpu 17.320 total
->>> elapsed time 17s
+Benchmark #2: ../target/release/day4 --variant Rayon input-big.txt
+  Time (mean ± σ):      4.681 s ±  0.064 s    [User: 28.383 s, System: 1.253 s]
+  Range (min … max):    4.589 s …  4.764 s    10 runs
 
- ❯ time cargo run --release input-big.txt --hashmap-par
-    Finished release [optimized] target(s) in 0.01s
-     Running `/home/j/git/balkian/advent-of-code/2020/rust/target/release/day4 input-big.txt --hashmap-par`
-Running in parallel using a Hashmap
-Valid in part 1: 5644801
-Valid in part 2: 4014080
-cargo run --release input-big.txt --hashmap-par  195.98s user 146.63s system 775% cpu 44.179 total
->>> elapsed time 45s
+Benchmark #3: ../target/release/day4 --variant Channel input-big.txt
+  Time (mean ± σ):      4.920 s ±  0.091 s    [User: 29.594 s, System: 1.386 s]
+  Range (min … max):    4.826 s …  5.098 s    10 runs
 
- ❯ time cargo run --release input-big.txt --hashmap-par2
-    Finished release [optimized] target(s) in 0.01s
-     Running `/home/j/git/balkian/advent-of-code/2020/rust/target/release/day4 input-big.txt --hashmap-par2`
-Solving using a struct and single-threaded code.
-Valid: 5644801 / 7049729
-Valid2: 4014080 / 7049729
-cargo run --release input-big.txt --hashmap-par2  53.18s user 2.15s system 109% cpu 50.430 total
->>> elapsed time 50s
+Benchmark #4: ../target/release/day4 --variant Hashmap input-big.txt
+  Time (mean ± σ):      3.884 s ±  0.048 s    [User: 3.845 s, System: 0.031 s]
+  Range (min … max):    3.819 s …  3.987 s    10 runs
 
- ❯ time cargo run --release input-big.txt --hashmap
-    Finished release [optimized] target(s) in 0.01s
-     Running `/home/j/git/balkian/advent-of-code/2020/rust/target/release/day4 input-big.txt --hashmap`
-Running synchronously using a Hashmap
-Valid in part 1: 5644801
-Valid in part 2: 4014080
-cargo run --release input-big.txt --hashmap  15.06s user 0.08s system 99% cpu 15.163 total
+Benchmark #5: ../target/release/day4 --variant HashmapPar input-big.txt
+  Time (mean ± σ):     11.582 s ±  0.260 s    [User: 51.493 s, System: 34.467 s]
+  Range (min … max):   11.030 s … 11.886 s    10 runs
 
+Benchmark #6: ../target/release/day4 --variant Hashmap2 input-big.txt
+  Time (mean ± σ):      4.888 s ±  0.089 s    [User: 4.859 s, System: 0.025 s]
+  Range (min … max):    4.778 s …  5.009 s    10 runs
+
+Summary
+  '../target/release/day4 --variant Hashmap input-big.txt' ran
+    1.21 ± 0.02 times faster than '../target/release/day4 --variant Rayon input-big.txt'
+    1.26 ± 0.03 times faster than '../target/release/day4 --variant Hashmap2 input-big.txt'
+    1.27 ± 0.03 times faster than '../target/release/day4 --variant Channel input-big.txt'
+    2.98 ± 0.08 times faster than '../target/release/day4 --variant HashmapPar input-big.txt'
+    3.42 ± 0.05 times faster than '../target/release/day4 --variant Simple input-big.txt'
 ```

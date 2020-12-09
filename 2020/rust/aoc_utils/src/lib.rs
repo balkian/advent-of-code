@@ -30,7 +30,7 @@ pub fn file_iter_from(fname: &str) -> impl Iterator<Item = String> + Send {
 }
 
 ///Get the input file from clap's matches and return an iterator over it
-pub fn file_iter_clap(matches: clap::ArgMatches) -> impl Iterator<Item = String> + Send {
+pub fn file_iter_clap(matches: &clap::ArgMatches) -> impl Iterator<Item = String> + Send {
     let fname = matches.value_of("input").expect("no input file provided");
     file_iter_from(fname)
 }
@@ -39,9 +39,9 @@ pub fn file_iter_clap(matches: clap::ArgMatches) -> impl Iterator<Item = String>
 struct BlockIter<I, M, R, FM, FR, FS>
 where
     I: Iterator<Item = String> + Send,
-    FM: Fn(String) -> M,
-    FR: Fn(Vec<M>) -> R,
-    FS: Fn(&str, &[M]) -> bool,
+    FM: Send+Fn(String) -> M,
+    FR: Send+Fn(Vec<M>) -> R,
+    FS: Send+Fn(&str, &[M]) -> bool,
 {
     inner: I,
     map: FM,
@@ -61,12 +61,12 @@ pub fn blocks<I, M, R, FM, FR, FS>(
     map: FM,
     reduce: FR,
     split: FS,
-) -> impl Iterator<Item = R>
+) -> impl Iterator<Item = R>+Send
 where
     I: Iterator<Item = String> + Send,
-    FM: Fn(String) -> M,
-    FR: Fn(Vec<M>) -> R,
-    FS: Fn(&str, &[M]) -> bool,
+    FM: Send+Fn(String) -> M,
+    FR: Send+Fn(Vec<M>) -> R,
+    FS: Send+Fn(&str, &[M]) -> bool,
 {
     BlockIter {
         inner,
@@ -83,9 +83,9 @@ pub fn default_split<T>(line: &str, _sofar: &[T]) -> bool {
 impl<I, M, R, FM, FR, FS> Iterator for BlockIter<I, M, R, FM, FR, FS>
 where
     I: Iterator<Item = String> + Send,
-    FM: Fn(String) -> M,
-    FR: Fn(Vec<M>) -> R,
-    FS: Fn(&str, &[M]) -> bool,
+    FM: Send+Fn(String) -> M,
+    FR: Send+Fn(Vec<M>) -> R,
+    FS: Send+Fn(&str, &[M]) -> bool,
 {
     type Item = R;
 
@@ -117,8 +117,8 @@ where
 ///and aggregate results using `reduce`.
 pub fn file_iter_blocks<M, R, FM, FR>(map: FM, reduce: FR) -> impl Iterator<Item = R>
 where
-    FM: Fn(String) -> M,
-    FR: Fn(Vec<M>) -> R,
+    FM: Send+Fn(String) -> M,
+    FR: Send+Fn(Vec<M>) -> R,
 {
     blocks(file_iter(), map, reduce, default_split)
 }

@@ -151,8 +151,9 @@ pub fn solve_hashmap_par<T: Iterator<Item = String> + Send>(mut it: T) {
 }
 
 ///Solve using the [`file_tier_blocks`] function.
-pub fn solve_hashmap2() {
-    let valid: (usize, usize) = aoc_utils::file_iter_blocks(
+pub fn solve_hashmap2(it: impl Iterator<Item = String> + Send) {
+    let valid: (usize, usize) = aoc_utils::blocks(
+        it,
         |line| {
             line.split(' ')
                 .map(|tok| {
@@ -177,8 +178,47 @@ pub fn solve_hashmap2() {
             }
             (c1, c2)
         },
+        aoc_utils::default_split,
     )
     .fold((0, 0), |c, x| (c.0 + x.0, c.1 + x.1));
+
+    println!("Valid in part 1: {:}", valid.0);
+    println!("Valid in part 2: {:}", valid.1);
+}
+
+///Solve using the [`file_tier_blocks`] function.
+pub fn solve_hashmap2_par(it: impl Iterator<Item = String> + Send) {
+    let valid: (usize, usize) = aoc_utils::blocks(
+        it,
+        |line| {
+            line.split(' ')
+                .map(|tok| {
+                    let res = tok.split(':').collect::<Vec<&str>>();
+                    (res[0].to_string(), res[1].to_string())
+                })
+                .collect::<Vec<(String, String)>>()
+        },
+        |block| block,
+        aoc_utils::default_split,
+    )
+    .par_bridge()
+    .map(|block| {
+        let mut p: Passport = HashMap::new();
+
+        for (k, v) in block.into_iter().flatten() {
+            p.insert(k, v);
+        }
+        let mut c1 = 0;
+        let mut c2 = 0;
+        if check_part1(&p) {
+            c1 = 1;
+        }
+        if check_part2(&p).is_some() {
+            c2 = 1;
+        }
+        (c1, c2)
+    })
+    .reduce(|| (0, 0), |sum, i| (sum.0 + i.0, sum.1 + i.1));
 
     println!("Valid in part 1: {:}", valid.0);
     println!("Valid in part 2: {:}", valid.1);

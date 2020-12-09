@@ -220,7 +220,7 @@ pub fn solve<T: IntoIterator<Item = String>>(it: T) {
 }
 
 /// Solve part1 and part2 using parallel code and a channel
-pub fn solve_par<T>(it: T)
+pub fn solve_channel<T>(it: T)
 where
     T: 'static + Send + IntoIterator<Item = String>,
 {
@@ -293,11 +293,10 @@ where
 /// I'm having trouble sending the iterator between threads, so
 /// I've been unable to split this into two functions: read file
 /// and process.
-pub fn solve_par2() {
+pub fn solve_rayon(it: impl Iterator<Item = String> + Send) {
     let count_1;
     let count_2;
 
-    let it = aoc_utils::file_iter();
     let mut finished = false;
 
     let pit = it.into_iter().batching(|it| {
