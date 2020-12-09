@@ -4,6 +4,8 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::str::FromStr;
 
+pub use clap;
+
 use log::info;
 
 pub fn file_iter_parsed<T>() -> impl Iterator<Item = T> + Send
@@ -20,9 +22,19 @@ pub fn file_iter() -> impl Iterator<Item = String> + Send {
     let input = &String::from("input.txt");
     let fname = args.get(1).unwrap_or(input);
     info!("Opening file: {}", fname);
-    let file = File::open(fname).unwrap();
+    file_iter_from(fname)
 
+}
+
+pub fn file_iter_from(fname: &str) -> impl Iterator<Item = String> + Send {
+    let file = File::open(fname).unwrap();
     BufReader::new(file).lines().map(|line| line.unwrap())
+}
+
+///Get the input file from clap's matches and return an iterator over it
+pub fn file_iter_clap(matches: clap::ArgMatches) -> impl Iterator<Item = String> + Send {
+    let fname = matches.value_of("input").expect("no input file provided");
+    file_iter_from(fname)
 }
 
 ///Iterate a file in blocks
@@ -111,4 +123,15 @@ where
     FR: Fn(Vec<M>) -> R,
 {
     blocks(file_iter(), map, reduce, default_split)
+}
+
+pub fn clap_app<'a>(day: usize) -> clap::App<'a,'a> {
+    clap::App::new(format!("Advent of Code 2020. Day {:}", day))
+        .version("1.0")
+        .author("Fernando Sánchez <aoc@sinpapel.es>")
+        .about("Tries to solve the riddle for AoC 2020")
+        .arg(clap::Arg::with_name("input")
+             .value_name("FILE")
+             .help("Sets a custom input file")
+             .default_value("input.txt"))
 }

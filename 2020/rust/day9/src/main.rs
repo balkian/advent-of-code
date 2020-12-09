@@ -1,11 +1,17 @@
 use std::collections::VecDeque;
 
+use aoc_utils::{clap, clap_app, file_iter_clap};
+
 fn main() {
-    let w_size: usize = std::env::args()
-        .nth(2)
-        .map(|x| x.parse().expect("invalid window size"))
-        .unwrap_or(25);
-    let numbers: Vec<usize> = aoc_utils::file_iter()
+    let matches = clap_app(9)
+        .arg(clap::Arg::with_name("window")
+             .short("w")
+             .default_value("25")
+             .long("window")).get_matches();
+
+    let w_size = clap::value_t_or_exit!(matches.value_of("window"), usize);
+
+    let numbers: Vec<usize> = file_iter_clap(matches)
         .map(|x| x.parse().expect("could not parse number"))
         .collect();
 
