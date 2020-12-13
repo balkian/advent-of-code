@@ -7,18 +7,15 @@ fn main() {
         .unwrap()
         .split(',')
         .enumerate()
-        .filter_map(|(idx, x)| match x.parse::<usize>() {
-            Ok(x) => Some((idx, x)),
-            _ => None,
-        })
+        .filter_map(|(idx, bus)| Some((idx, bus.parse().ok()?)))
         .collect();
 
-    let missing: Vec<(usize, usize)> = buses
+    let next = buses
         .iter()
-        .map(|(_, x)| (x - (earliest % x), *x))
-        .collect();
+        .map(|(_, bus)| (bus - (earliest % bus), bus))
+        .min()
+        .unwrap();
 
-    let next = missing.iter().min().unwrap();
     println!("Part 1: {:?}", next.0 * next.1);
 
     let mut period = buses[0].1;
