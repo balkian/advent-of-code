@@ -1,0 +1,37 @@
+fn main() {
+    let args = aoc_utils::app("11").get_matches();
+    let mut lines = aoc_utils::file_iter_clap(&args);
+    let earliest: usize = lines.next().unwrap().parse().unwrap();
+    let buses: Vec<(usize, usize)> = lines
+        .next()
+        .unwrap()
+        .split(',')
+        .enumerate()
+        .filter_map(|(idx, x)| match x.parse::<usize>() {
+            Ok(x) => Some((idx, x)),
+            _ => None,
+        })
+        .collect();
+
+    let missing: Vec<(usize, usize)> = buses
+        .iter()
+        .map(|(_, x)| (x - (earliest % x), *x))
+        .collect();
+
+    let next = missing.iter().min().unwrap();
+    println!("Part 1: {:?}", next.0 * next.1);
+
+    let mut period = buses[0].1;
+    let mut epoch = period;
+
+    for (delay, current) in buses[1..].iter() {
+        for _ in 0..*current {
+            if (epoch + delay) % current == 0 {
+                break;
+            }
+            epoch += period;
+        }
+        period *= current;
+    }
+    println!("Part 2: {:?}", epoch);
+}
