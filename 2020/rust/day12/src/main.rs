@@ -93,7 +93,7 @@ enum Command {
 }
 
 fn main() {
-    let args = aoc_utils::app("11").get_matches();
+    let args = aoc_utils::app("12").get_matches();
     let cmds: Vec<Command> = aoc_utils::file_iter_clap(&args)
         .map(|x| {
             let (direct, units) = x.split_at(1);

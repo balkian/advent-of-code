@@ -1,5 +1,5 @@
 fn main() {
-    let args = aoc_utils::app("11").get_matches();
+    let args = aoc_utils::app("13").get_matches();
     let mut lines = aoc_utils::file_iter_clap(&args);
     let earliest: usize = lines.next().unwrap().parse().unwrap();
     let buses: Vec<(usize, usize)> = lines
