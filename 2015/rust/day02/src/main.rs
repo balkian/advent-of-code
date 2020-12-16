@@ -6,8 +6,16 @@ fn calculate(l: &usize, w: &usize, h: &usize) -> usize {
     2 * sides.iter().sum::<usize>() + min
 }
 
+fn ribbon(l: &usize, w: &usize, h: &usize) -> usize {
+    let m3 = l * w * h;
+    let perim: usize = [(l + w), (w + h), (h + l)].iter().min().unwrap() * 2;
+    m3 + perim
+}
+
 fn main() {
-    let file = env::args().nth(1).unwrap_or("input.txt".to_string());
+    let file = env::args()
+        .nth(1)
+        .unwrap_or_else(|| "input.txt".to_string());
     let dimensions: Vec<(usize, usize, usize)> = std::fs::read_to_string(file)
         .expect("could not read the file")
         .lines()
@@ -17,7 +25,9 @@ fn main() {
             (dims[0], dims[1], dims[2])
         })
         .collect();
-    dbg!(&dimensions);
     let total: usize = dimensions.iter().map(|(w, l, h)| calculate(w, l, h)).sum();
     println!("Part 1: {}", total);
+
+    let ribbon: usize = dimensions.iter().map(|(w, l, h)| ribbon(w, l, h)).sum();
+    println!("Part 2: {}", ribbon);
 }
