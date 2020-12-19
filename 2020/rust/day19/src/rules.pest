@@ -1,0 +1,12 @@
+structure = { rules ~ "\n" ~ messages }
+
+value = {  ASCII_ALPHANUMERIC }
+branch = { (rule_name | ("\"" ~ value ~ "\""))+  ~ "|"? }
+rule_name = @{ (ASCII_DIGIT+) }
+rule = { rule_name ~ ":" ~ branch+ ~ "\n"? }
+rules = { rule+ }
+
+messages = { (message ~ "\n"?)+ }
+message = @{ ASCII_ALPHANUMERIC+ }
+
+WHITESPACE = _{ " " | "\t" }
