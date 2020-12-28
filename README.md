@@ -1,5 +1,5 @@
-My takes on the [Advent of Code](https://adventofcode.com/) challenge.
-I mostly use these exercises as a way to learn new languages.
+My solutions to the [Advent of Code](https://adventofcode.com/) challenge.
+I mostly use these it as a way to learn new languages.
 
 So far I've done:
 
