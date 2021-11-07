@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::fs;
 use std::iter::once;
 
@@ -27,54 +26,41 @@ enum State {
     Working(usize, char),
 }
 
-fn solve2(input: &str, nworkers: usize, offset: usize) -> usize {
+fn algo2(input: &str, nworkers: usize, offset: usize) -> (String, usize) {
     let mut order = String::new();
-    let mut done: HashSet<char> = HashSet::new();
-    let mut working: HashSet<char> = HashSet::new();
     let mut reqs = parse(input);
-    let mut total: Vec<char> = reqs
+    let mut missing: Vec<char> = reqs
         .iter()
         .flat_map(|tup| once(tup.0).chain(once(tup.1)))
-        .collect::<HashSet<char>>()
-        .into_iter()
         .collect();
-    total.sort_unstable();
+    missing.sort_unstable();
+    missing.dedup();
 
     let mut workers = vec![State::Idle; nworkers];
     let mut clock = 0;
+    let offset = ('A' as usize) - 1 - offset;
 
-    'outer: while total.len() != done.len() {
-        let mut completed = vec![];
-        for (ix, req) in reqs.iter().enumerate().rev() {
-            if done.contains(&req.0) {
-                completed.push(ix);
-            }
-        }
-        for c in completed {
-            reqs.remove(c);
-        }
-
-        for t in total.iter() {
-            if done.contains(t) || working.contains(t) {
-                continue;
-            }
-            if !reqs.iter().any(|r| r.1 == *t) {
-                let state = workers.last_mut().unwrap();
-                if let State::Working(time, task) = state {
-                    clock = *time;
-                    done.insert(*task);
-                    order.push(*task);
+    'outer: while !missing.is_empty() {
+        if let Some(worker) = workers
+            .iter_mut()
+            .filter(|x| matches!(x, State::Idle))
+            .last()
+        {
+            let mut ix = 0;
+            while ix < missing.len() {
+                let t = *missing.get(ix).unwrap();
+                if !reqs.iter().any(|r| r.1 == t) {
+                    missing.remove(ix);
+                    let when =
+                        clock + (t.to_ascii_uppercase() as usize) - offset;
+                    *worker = State::Working(when, t);
+                    workers.sort_by_key(|s| match s {
+                        State::Idle => 0,
+                        State::Working(time, _) => -(*time as isize),
+                    });
+                    continue 'outer;
                 }
-                let when = clock + (t.to_ascii_uppercase() as usize) - ('A' as usize) + 1 + offset;
-
-                *state = State::Working(when, *t);
-                working.insert(*t);
-
-                workers.sort_by_key(|s| match s {
-                    State::Idle => 0,
-                    State::Working(time, _) => -(*time as isize),
-                });
-                continue 'outer;
+                ix += 1;
             }
         }
         let last = workers
@@ -82,58 +68,39 @@ fn solve2(input: &str, nworkers: usize, offset: usize) -> usize {
             .filter(|x| matches!(x, State::Working(_, _)))
             .last()
             .unwrap();
-        if let State::Working(when, what) = last {
+        if let State::Working(when, task) = last {
             clock = *when;
-            working.remove(what);
-            done.insert(*what);
-            order.push(*what);
+            let mut i = 0;
+            while i < reqs.len() {
+                if reqs[i].0 == *task {
+                    reqs.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+            order.push(*task);
         }
         *last = State::Idle;
     }
-    if let State::Working(time, _) = workers[0] {
-        clock += time;
+    for worker in workers.into_iter().rev() {
+        if let State::Working(time, t) = worker {
+            clock = time;
+            order.push(t);
+        }
     }
-    clock
+    (order, clock)
 }
 
 fn solve1(input: &str) -> String {
-    let mut order = String::new();
-    let mut done: HashSet<char> = HashSet::new();
-    let mut reqs = parse(input);
-    let mut total: Vec<char> = reqs
-        .iter()
-        .flat_map(|tup| once(tup.0).chain(once(tup.1)))
-        .collect::<HashSet<char>>()
-        .into_iter()
-        .collect();
-    total.sort_unstable();
+    algo2(input, 1, 60).0
+}
 
-    'outer: while total.len() != done.len() {
-        let mut completed = vec![];
-        for (ix, req) in reqs.iter().enumerate().rev() {
-            if done.contains(&req.0) {
-                completed.push(ix);
-            }
-        }
-        for c in completed {
-            reqs.remove(c);
-        }
-        for t in total.iter() {
-            if done.contains(t) {
-                continue;
-            }
-            if !reqs.iter().any(|r| r.1 == *t) {
-                done.insert(*t);
-                order.push(*t);
-                continue 'outer;
-            }
-        }
-    }
-    order
+fn solve2(input: &str, nworkers: usize, offset: usize) -> usize {
+    algo2(input, nworkers, offset).1
 }
 
 #[test]
-fn test_example() {
+fn test_example1() {
     assert_eq!(solve1(include_str!("../example")), "CABDFE");
 }
 #[test]
