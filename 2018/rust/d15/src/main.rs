@@ -2,12 +2,12 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::{HashMap, HashSet};
-use std::fmt;
-
-use std::{thread, time};
+use std::{fmt, fs};
 
 fn main() {
-    println!("Hello, world!");
+    let input = fs::read_to_string("input").expect("could not read file");
+    println!("Solution 1: {}", solve1(&input));
+    println!("Solution 2: {}", solve2(&input));
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -27,17 +27,6 @@ impl Position {
     }
 }
 
-// impl Add for &Position {
-//     type Output = Position;
-
-//     fn add(self, other: Self) -> Self::Output {
-//         Position(
-//             ((self.0 as isize) + other.0) as usize,
-//             ((self.1 as isize) + other.1) as usize,
-//         )
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq)]
 struct Character {
     race: Race,
@@ -50,116 +39,94 @@ impl Character {
         Self { race, pos, hp: 200 }
     }
 
-    fn attack(&mut self) {
-        self.hp = self.hp.saturating_sub(3);
+    fn attack(&mut self, delta: usize) {
+        self.hp = self.hp.saturating_sub(delta);
     }
 }
 
+#[derive(Clone)]
 struct Game {
     grid: Vec<Vec<char>>,
     characters: Vec<Character>,
+    elf_hp: usize,
 }
 
 impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for row in self.grid.iter() {
+        for (ix, row) in self.grid.iter().enumerate() {
             for c in row {
                 write!(f, "{}", c)?;
             }
+            write!(f, "\t\t")?;
+            for c in self.characters.iter() {
+                if c.pos.0 != ix {
+                    continue;
+                }
+                let s = match c.race {
+                    Race::Goblin => "G",
+                    Race::Elf => "E",
+                };
+                write!(f, "{}({})  ", s, c.hp)?;
+            }
             writeln!(f)?;
-        }
-        for c in self.characters.iter() {
-            let s = match c.race {
-                Race::Goblin => "G",
-                Race::Elf => "E",
-            };
-            writeln!(f, "{}({})", s, c.hp);
         }
         Ok(())
     }
 }
 
 impl Game {
-    fn print_distances(&self, distances: &HashMap<Position, (usize, Position)>) {
-        for i in 0..self.grid.len() {
-            for j in 0..self.grid[i].len() {
-                print!(
-                    "{} ",
-                    distances
-                        .get(&Position(i, j))
-                        .map(|(dist, _)| format!("{:03}", *dist))
-                        .or(Some(" . ".into()))
-                        .unwrap()
-                );
-            }
-            println!();
-        }
-        println!();
-    }
-    fn find_dijkstra<'a, 'b>(
-        &self,
-        pos: Position,
-        positions: &'b HashSet<Position>,
-    ) -> Option<Position> {
-        let mut missing: HashSet<Position> = positions.clone();
-        let mut candidates = BinaryHeap::from(vec![Reverse((0, pos))]);
-        let mut distances: HashMap<Position, (usize, Position)> = HashMap::new();
-        distances.insert(pos, (0, pos));
-        // dbg!{&missing};
-        while let Some(Reverse((cost, pos))) = candidates.pop() {
-            // dbg!{&candidates,&distances};
-
-            if missing.is_empty() {
-                break;
-            }
-            let y = pos.0;
-            let x = pos.1;
-            let cost = cost + 1;
-            for (i, j) in [(y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)].into_iter() {
-                // println!("checking one {},{} - {}", i, j, self.grid[pos.0][pos.1]);
-                // println!("{}", &self);
-                if self.grid[i][j] == '.' {
-                    let next = Position(i, j);
-                    let new_value = (cost, pos);
-                    if !distances.contains_key(&next) || distances.get(&next).unwrap() > &new_value
-                    {
-                        distances.insert(next, new_value);
-                        candidates.push(Reverse((cost, next)));
-                        missing.remove(&next);
-                    }
-                }
-            }
-        }
-
-        distances
+    fn from_str(input: &str) -> Self {
+        let grid: Vec<Vec<char>> = input
+            .lines()
+            .map(|line| line.trim().chars().collect())
+            .collect();
+        let characters = grid
             .iter()
-            .filter(|(x, _)| positions.contains(x))
-            .min_by_key(|(pos, (dist, _))| (*dist, *pos))
-            .map(|(target, _)| {
-                let mut target = *target;
-                // println!("{:?}", distances.get(&target));
-                // print!(
-                //     "Distance {:?} to {:?}: {}. ",
-                //     pos,
-                //     target,
-                //     pos.distance(target)
-                // );
-                while pos.distance(target) > 1 {
-                    target = distances.get(&target).unwrap().1;
-                }
-                // println!("Next: {:?}", target);
-                // self.print_distances(&distances);
-                target
+            .enumerate()
+            .flat_map(move |(i, row)| {
+                row.iter()
+                    .enumerate()
+                    .filter_map(move |(j, cell)| match cell {
+                        'G' => Some(Character::new(Race::Goblin, Position(i, j))),
+                        'E' => Some(Character::new(Race::Elf, Position(i, j))),
+                        _ => None,
+                    })
             })
-    }
+            .collect();
 
+        Game {
+            grid,
+            characters,
+            elf_hp: 3,
+        }
+    }
+    fn step(&mut self) -> bool {
+        self.characters.retain(|c| c.hp > 0);
+        self.characters.sort_by_key(|x| x.pos);
+
+        let mut finished = false;
+
+        for ix in 0..self.characters.len() {
+            if self.characters[ix].hp == 0 {
+                continue;
+            }
+            if self.attack(ix) {
+                continue;
+            } else if self.get_closer(ix) {
+                self.attack(ix);
+                continue;
+            }
+            finished = true;
+        }
+        finished
+    }
     fn attack(&mut self, ix: usize) -> bool {
         let this = &self.characters[ix];
 
         let mut toattack = vec![];
 
         for (ix, other) in self.characters.iter().enumerate() {
-            if other == this || this.race == other.race {
+            if other == this || this.race == other.race || other.hp == 0 {
                 continue;
             }
             if this.pos.distance(other.pos) == 1 {
@@ -176,28 +143,28 @@ impl Game {
         });
         let target = toattack[0];
         let c2 = self.characters.get_mut(target).unwrap();
-        c2.attack();
+        let hp = match c2.race {
+            Race::Elf => 3,
+            Race::Goblin => self.elf_hp,
+        };
+        c2.attack(hp);
         if c2.hp == 0 {
             self.grid[c2.pos.0][c2.pos.1] = '.';
-            println!("Agent died");
-            println!("{}", self);
         }
-        return true;
+        true
     }
 
     fn get_closer(&mut self, ix: usize) -> bool {
         let this = &self.characters[ix];
         let mut targets = HashSet::new();
+        let mut any_alive = false;
         let c1 = this;
         for ox in 0..self.characters.len() {
-            if ix == ox {
-                continue;
-            }
-
             let c2 = &self.characters[ox];
             if c2.hp == 0 || c2.race == c1.race {
                 continue;
             }
+            any_alive = true;
 
             let y = self.characters[ox].pos.0 as isize;
             let x = self.characters[ox].pos.1 as isize;
@@ -224,7 +191,6 @@ impl Game {
         if let Some(target) = self.find_dijkstra(c1.pos, &targets) {
             assert_eq!(target.distance(c1.pos), 1);
             assert_ne!(target, c1.pos);
-            // println!("Moving {:?} to {:?}", c1.pos, target);
 
             let symbol = self.grid[c1.pos.0][c1.pos.1];
             assert_ne!(symbol, '.');
@@ -233,64 +199,98 @@ impl Game {
             self.grid[c1.pos.0][c1.pos.1] = '.';
             self.grid[target.0][target.1] = symbol;
             self.characters[ix].pos = target;
-            return true;
         }
-        return false;
+        any_alive
     }
 
-    fn step(&mut self) -> bool {
-        let mut played = false;
-
-        self.characters.sort_by_key(|x| x.pos);
-        self.characters.retain(|c| c.hp > 0);
-
-        for ix in 0..self.characters.len() {
-            thread::sleep(time::Duration::from_millis(200));
-            if self.attack(ix) {
-                played = true
-            } else if self.get_closer(ix) {
-                played = true;
-                self.attack(ix);
+    fn find_dijkstra(&self, pos: Position, positions: &HashSet<Position>) -> Option<Position> {
+        let mut missing: HashSet<Position> = positions.clone();
+        let mut candidates = BinaryHeap::from(vec![Reverse((0, pos))]);
+        let mut distances: HashMap<Position, (usize, Position)> = HashMap::new();
+        distances.insert(pos, (0, pos));
+        while let Some(Reverse((cost, pos))) = candidates.pop() {
+            let y = pos.0;
+            let x = pos.1;
+            let cost = cost + 1;
+            for (i, j) in [(y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)].into_iter() {
+                if self.grid[i][j] == '.' {
+                    let next = Position(i, j);
+                    let new_value = (cost, pos);
+                    if !distances.contains_key(&next) || distances.get(&next).unwrap() > &new_value
+                    {
+                        distances.insert(next, new_value);
+                        candidates.push(Reverse((cost, next)));
+                        missing.remove(&next);
+                    }
+                }
             }
         }
-        !played
-    }
 
-    fn from_str(input: &str) -> Self {
-        let grid: Vec<Vec<char>> = input
-            .lines()
-            .map(|line| line.trim().chars().collect())
-            .collect();
-        let characters = grid
+        distances
             .iter()
-            .enumerate()
-            .flat_map(move |(i, row)| {
-                row.iter()
-                    .enumerate()
-                    .filter_map(move |(j, cell)| match cell {
-                        'G' => Some(Character::new(Race::Goblin, Position(i, j))),
-                        'E' => Some(Character::new(Race::Elf, Position(i, j))),
-                        _ => None,
-                    })
+            .filter(|(x, _)| positions.contains(x))
+            .min_by_key(|(pos, (dist, _))| (*dist, *pos))
+            .map(|(target, _)| {
+                let mut target = *target;
+                while pos.distance(target) > 1 {
+                    target = distances.get(&target).unwrap().1;
+                }
+                target
             })
-            .collect();
-
-        Game { grid, characters }
     }
+    #[allow(dead_code)]
+    fn print_distances(&self, distances: &HashMap<Position, (usize, Position)>) {
+        for i in 0..self.grid.len() {
+            for j in 0..self.grid[i].len() {
+                print!(
+                    "{} ",
+                    distances
+                        .get(&Position(i, j))
+                        .map(|(dist, _)| format!("{:03}", *dist))
+                        .or_else(|| Some(" . ".into()))
+                        .unwrap()
+                );
+            }
+            println!();
+        }
+        println!();
+    }
+}
+
+fn solve2(input: &str) -> usize {
+    let orig_game = Game::from_str(input);
+    let count_elves = |x: &Game| x.characters.iter().filter(|c| c.race == Race::Elf).count();
+    let mut game: Game;
+
+    let num_elves = count_elves(&orig_game);
+    'outer: for hp in 3.. {
+        game = orig_game.clone();
+        game.elf_hp = hp;
+        for i in 1.. {
+            let finished = game.step();
+            if count_elves(&game) != num_elves {
+                continue 'outer;
+            }
+            if finished {
+                return (i - 2) * game.characters.iter().map(|c| c.hp).sum::<usize>();
+            }
+        }
+    }
+    unreachable!();
 }
 
 fn solve1(input: &str) -> usize {
     let mut game = Game::from_str(input);
-    let mut rounds: usize = 0;
-    for i in 1.. {
+    for i in 0.. {
+        let finished = game.step();
+        println!("Round {}", i);
         println!("{}", &game);
-        if game.step() {
-            println!("{}", &game);
-            rounds = i;
-            break;
+        if finished {
+            println!("Answer: {}", i);
+            return i * game.characters.iter().map(|c| c.hp).sum::<usize>();
         }
     }
-    rounds * game.characters.iter().map(|c| c.hp).sum::<usize>()
+    unreachable!();
 }
 
 #[test]
