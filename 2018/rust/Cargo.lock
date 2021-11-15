@@ -126,9 +126,6 @@ version = "0.1.0"
 [[package]]
 name = "d19"
 version = "0.1.0"
-dependencies = [
- "lazy_static",
-]
 
 [[package]]
 name = "lazy_static"

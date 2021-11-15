@@ -1,80 +1,28 @@
-use std::collections::{HashMap};
-
-use lazy_static::lazy_static;
-
 use std::fs;
 
 
-macro_rules! operations {
-    ($($tts:tt)*) => {{
-        let mut vect: Vec<(&str, Operation)> = vec![];
-        operations_inner!(vect $($tts)*);
-        let hm: HashMap<&str, Operation> = HashMap::from_iter(vect);
-        hm
+macro_rules! rel {
+    ($reg:ident $index:expr) => {{
+        let index = $index;
+        if (index < 0) || (index as usize >= $reg.len()) {
+            return None
+        } else {
+            $reg[index as usize]
+        }
     }}
 }
 
-/// This is a very ugly macro, but I'm still learning
-macro_rules! operations_inner {
-    (@direct $vect:ident $name:ident |$a:ident, $b:ident| $op:block ) => {{
-        fn $name(reg: &Registers, op: &Op) -> Option<Registers> {
-            if op.1 < 0 || op.1 as usize >= reg.len() {
-                return None
-            }
-            let mut res = reg.clone();
-            let $a = reg[op.1 as usize];
-            let $b = op.2;
-            res[op.3] = $op;
-            Some(res)
-        }
-        $vect.push((stringify!($name), $name));
-
+macro_rules! command {
+    ($regs:ident $op:ident $code:block) => {{
+        let mut res = $regs.clone();
+        res[$op.3] = $code;
+        Some(res)
     }};
-    (@indirect $vect:ident $name:ident |$a:ident, $b:ident| $op:block) => {{
-        fn $name(reg: &Registers, op: &Op) -> Option<Registers> {
-            if op.2 < 0 || op.2 as usize >= reg.len() {
-                return None
-            }
-            let mut res = reg.clone();
-            let $a = reg[op.1 as usize];
-            let $b = reg[op.2 as usize];
-            res[op.3] = $op;
-            Some(res)
-        }
-        $vect.push((stringify!($name), $name));
-    }};
-    (@inverse $vect:ident $name:ident |$a:ident, $b:ident| $op:block ) => {{
-        fn $name(reg: &Registers, op: &Op) -> Option<Registers> {
-            if op.1 < 0 || op.2 < 0 || op.1 as usize > reg.len() || op.2 as usize >= reg.len() {
-                return None
-            }
-            let mut res = reg.clone();
-            let $a = op.1;
-            let $b = reg[op.2 as usize];
-            res[op.3] = $op;
-            Some(res)
-        }
-        $vect.push((stringify!($name), $name));
-    }};
-    ($vect:ident ($($dir:ident)?, $($indir:ident)?, $($inv:ident)?) => |$a:ident, $b:ident| $op:block
-     $(;$(($($odir:ident)?, $($oindir:ident)?, $($oinv:ident)?) => |$oa:ident, $ob:ident| $oop:block)*)* ;)
-     => {{
-        $(operations_inner!(@direct $vect $dir |$a, $b| $op);)?
-        $(operations_inner!(@indirect $vect $indir |$a, $b| $op);)?
-        $(operations_inner!(@inverse $vect $inv |$a, $b| $op);)?
-        $(operations_inner!($vect $(($($odir)?, $($oindir)?, $($oinv)?) => |$oa ,$ob| $oop;)*);)?
-    }}
 }
+
 
 #[derive(Debug, PartialEq)]
 struct Op(String, isize, isize, usize);
-
-
-impl Op {
-    fn apply(&self, reg: &Registers) -> Option<Registers> {
-        (OPS.get(&*self.0).unwrap())(reg, self)
-    }
-}
 
 #[derive(Debug)]
 struct PC {
@@ -83,18 +31,29 @@ struct PC {
     ip: usize,
 }
 
-lazy_static! {
-    static ref OPS: HashMap<&'static str, Operation> = operations! {
-        (addi, addr,     ) => |a, b| {a+b};
-        (muli, mulr,     ) => |a, b| {a*b};
-        (bani, banr,     ) => |a, b| {a&b};
-        (bori, borr,     ) => |a, b| {a|b};
-        (    ,     , seti) => |a,_b| {a};
-        (setr,     ,     ) => |a,_b| {a};
-        (gtri, gtrr, gtir) => |a, b| {if a>b {1} else {0}};
-        (eqri, eqrr, eqir) => |a, b| {if a==b {1} else {0}};
-    };
+impl Iterator for PC {
+    type Item = isize;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        let ip = self.regs[self.ip];
+        if ip < 0 || ip >= self.code.len() as isize {
+            dbg!(&ip);
+            return None;
+        }
+        let inst = &self.code[ip as usize];
+        if let Some(mut reg) = self.exec_one(inst){
+            reg[self.ip] += 1;
+            println!("{}\t{:2?}\t{:2?} -> {:2?}", self.regs[self.ip as usize], inst, &self.regs, &reg);
+            self.regs = reg;
+            Some(self.regs[self.ip])
+        } else {
+            println!("Instruction failed: {:?}", inst);
+            None
+        }
+    }
+
 }
+
 
 impl PC {
     fn parse(input: &str) -> Self {
@@ -107,40 +66,51 @@ impl PC {
         let regs = [0;6];
         PC{regs, code, ip}
     }
-    fn execute(&mut self) -> Option<isize> {
-        let ip = self.regs[self.ip];
-        if ip < 0 || ip >= self.code.len() as isize {
-            dbg!(&ip);
-            return None;
-        }
-        let inst = &self.code[ip as usize];
-        if let Some(mut reg) = inst.apply(&self.regs){
-            reg[self.ip] += 1;
-            println!("{}\t{:2?}\t{:2?} -> {:2?}", self.regs[self.ip as usize], inst, &self.regs, &reg);
-            self.regs = reg;
-            Some(self.regs[self.ip])
-        } else {
-            println!("Instruction failed: {:?}", inst);
-            None
-        }
+
+
+    fn exec_one(&self, op: &Op) -> Option<Registers>{
+        let regs = self.regs;
+        let res = match op.0.as_str() {
+            "addi" => command!(regs op {rel!(regs op.1) + op.2}),
+            "addr" => command!(regs op {rel!(regs op.1) + rel!(regs op.2)}),
+            "muli" => command!(regs op {rel!(regs op.1) * op.2}),
+            "mulr" => command!(regs op {rel!(regs op.1) * rel!(regs op.2)}),
+
+            "bani" => command!(regs op {rel!(regs op.1) & op.2}),
+            "banr" => command!(regs op {rel!(regs op.1) & rel!(regs op.2)}),
+
+            "bori" => command!(regs op {rel!(regs op.1) | op.2}),
+            "borr" => command!(regs op {rel!(regs op.1) | rel!(regs op.2)}),
+
+            "gtri" => command!(regs op {if (rel!(regs op.1) > op.2) {1} else {0}}),
+            "gtrr" => command!(regs op {if (rel!(regs op.1) > rel!(regs op.2)) {1} else {0}}),
+            "gtir" => command!(regs op {if op.1 > rel!(regs op.2) {1} else {0}}),
+
+            "eqri" => command!(regs op {if rel!(regs op.1) == op.2 {1} else {0}}),
+            "eqrr" => command!(regs op {if rel!(regs op.1) == rel!(regs op.2) {1} else {0}}),
+            "eqir" => command!(regs op {if op.1 == rel!(regs op.2) {1} else {0}}),
+
+            "seti" => command!(regs op {op.1}),
+            "setr" => command!(regs op {rel!(regs op.1)}),
+            _ => panic!("unknown command"),
+        };
+        // dbg!{&res};
+        res
     }
 
     fn run(&mut self) {
-        while let Some(a) = self.execute() {
+        for _i in self {
         }
     }
-}
 
+}
 
 
 type Registers = [isize; 6];
 
-type Operation = fn(&Registers, &Op) -> Option<Registers>;
-
-
 #[allow(clippy::many_single_char_names)]
 fn parse_op(s: &str) -> Op {
-    let caps: Vec<&str> = s.split(" ").collect();
+    let caps: Vec<&str> = s.split(' ').collect();
     let op = caps[0].to_string();
     let a = caps[1].parse().unwrap();
     let b = caps[2].parse().unwrap();
@@ -153,13 +123,22 @@ fn main() {
     let input = fs::read_to_string("input").expect("could not read file");
     let sol1 = solve1(&input);
     println!("Solution 1: {}", sol1);
+    // let sol2 = solve2(&input);
+    // println!("Solution 2: {}", sol2);
 }
 
 
 fn solve1(input: &str) -> isize {
-
     let mut pc = PC::parse(input);
     dbg!(&pc);
+    pc.run();
+    pc.regs[pc.ip]
+}
+
+fn solve2(input: &str) -> isize {
+    let mut pc = PC::parse(input);
+    dbg!(&pc);
+    pc.regs[0] = 1;
     pc.run();
     pc.regs[pc.ip]
 }
