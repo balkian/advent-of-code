@@ -51,7 +51,6 @@ impl Iterator for PC {
             None
         }
     }
-
 }
 
 
@@ -121,18 +120,17 @@ fn parse_op(s: &str) -> Op {
 
 fn main() {
     let input = fs::read_to_string("input").expect("could not read file");
-    let sol1 = solve1(&input);
-    println!("Solution 1: {}", sol1);
-    // let sol2 = solve2(&input);
-    // println!("Solution 2: {}", sol2);
+    // let sol1 = solve1(&input);
+    // println!("Solution 1: {}", sol1);
+    let sol2 = solve2(&input);
+    println!("Solution 2: {}", sol2);
 }
 
 
 fn solve1(input: &str) -> isize {
     let mut pc = PC::parse(input);
-    dbg!(&pc);
     pc.run();
-    pc.regs[pc.ip]
+    pc.regs[0]
 }
 
 fn solve2(input: &str) -> isize {
