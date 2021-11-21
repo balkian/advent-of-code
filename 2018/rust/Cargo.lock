@@ -139,6 +139,10 @@ name = "d21"
 version = "0.1.0"
 
 [[package]]
+name = "d22"
+version = "0.1.0"
+
+[[package]]
 name = "fixedbitset"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
