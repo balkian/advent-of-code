@@ -19,7 +19,7 @@ fn is_valid(input: &str, i: usize, difficulty: usize) -> bool {
     if (difficulty % 2 == 1) && (digest[bytes] & 0xF0) != 0 {
         return false
     }
-    return true
+    true
 }
 
 pub fn part1(input: &str) -> usize {

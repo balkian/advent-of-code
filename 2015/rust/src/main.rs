@@ -2,19 +2,20 @@ use std::env;
 
 macro_rules! aoc_main {
 
-    ($($day:ident)*) => {
+    ($($day:ident),*) => {
         $(mod $day;)*
 
         fn main() {
             match env::args().nth(1) {
-                $( Some($day) => {
+                $( Some(a) if a == stringify!($day) => {
+                    println!(stringify!(Running $day));
 
                     let fname = stringify!($day.input);
                     let input = &std::fs::read_to_string(fname).expect("could not read input file");
-                    let input = $day::parse(input);
+                    let input = &$day::parse(input);
                     println!("Part 1 {}", $day::part1(input));
                     println!("Part 2 {}", $day::part2(input));
-                },)* 
+                },)*
                 _ => panic!("not implemented"),
             }
         }
@@ -25,11 +26,10 @@ macro_rules! aoc_main {
 macro_rules! aoc_test {
     ($part:ident, $name:ident, $input:tt, $expected:expr) => {
         #[test]
-        fn $name () {
+        fn $name() {
             assert_eq!($part($input), $expected);
         }
-
-    }
+    };
 }
 
-aoc_main!(day04);
+aoc_main!(day04, day05);
