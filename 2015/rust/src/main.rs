@@ -1,7 +1,8 @@
 use std::env;
 
-macro_rules! aoc_main {
+pub extern crate paste;
 
+macro_rules! aoc_main {
     ($($day:ident),*) => {
         $(mod $day;)*
 
@@ -24,12 +25,17 @@ macro_rules! aoc_main {
 
 #[macro_export]
 macro_rules! aoc_test {
-    ($part:ident, $name:ident, $input:tt, $expected:expr) => {
+    ($part:ident, $name:ident, $input:tt, $expected:expr $(;)?) => {
         #[test]
-        fn $name() {
+        fn $name () {
             assert_eq!($part($input), $expected);
         }
     };
+    ($part:ident, $name:ident, $input:tt, $expected:expr $(; $opart:ident, $oname:ident, $oinput:tt, $oexpected:expr)* $(;)?) => {
+        aoc_test!($part, $name, $input, $expected);
+        aoc_test!($($opart, $oname, $oinput, $oexpected;)*);
+    };
 }
+
 
 aoc_main!(day04, day05);

@@ -32,7 +32,9 @@ pub fn part2(input: &str) -> usize {
     }).count()
 }
 
-aoc_test!(part2, p1, "qjhvhtzxzqqjkmpb", 1);
-aoc_test!(part2, p2, "xxyxx", 1);
-aoc_test!(part2, p3, "uurcxstgmygtbstg", 0);
-aoc_test!(part2, p4, "ieodomkazucvgmuy", 0);
+aoc_test!(
+    part2, ex1, "qjhvhtzxzqqjkmpb", 1;
+    part2, ex2, "xxyxx", 1;
+    part2, ex3, "uurcxstgmygtbstg", 0;
+    part2, ex4, "ieodomkazucvgmuy", 0;
+);

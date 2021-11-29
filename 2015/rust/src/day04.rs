@@ -12,7 +12,6 @@ fn is_valid(input: &str, i: usize, difficulty: usize) -> bool {
 
     for i in 0..bytes {
         if digest[i] != 0 {
-            // dbg!(i, digest[i]);
             return false
         }
     }
@@ -36,5 +35,5 @@ fn test_valid(){
 
 }
 
-aoc_test!(part1, abc, "abcdef", 609043);
-aoc_test!(part1, pqr, "pqrstuv", 1048970);
+aoc_test!(part1, abc, "abcdef", 609043;
+          part1, pqr, "pqrstuv", 1048970);
