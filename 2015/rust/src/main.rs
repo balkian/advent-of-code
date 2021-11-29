@@ -8,13 +8,12 @@ macro_rules! aoc_main {
         pub fn main() {
             match crate::env::args().nth(1) {
                 $( Some(a) if a == stringify!($day) => {
-                    println!(stringify!(Running $day));
-
+                    println!(stringify!(* Running $day));
                     let fname = stringify!($day.input);
                     let input = &std::fs::read_to_string(fname).expect("could not read input file");
                     let input = &$day::parse(input);
-                    println!("Part 1 {}", $day::part1(input));
-                    println!("Part 2 {}", $day::part2(input));
+                    println!("\tPart 1 {}", $day::part1(input));
+                    println!("\tPart 2 {}", $day::part2(input));
                 },)*
                 Some(a) if a == "all" => {
                     $(println!(stringify!(* Running $day));
