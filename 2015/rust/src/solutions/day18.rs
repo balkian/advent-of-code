@@ -1,11 +1,13 @@
 use std::cmp::min;
-type Grid = Vec<Vec<usize>>;
 
-fn print_grid(grid: &Grid) {
+type Grid = Vec<Vec<usize>>;
+type GridRef<'a> = &'a [Vec<usize>];
+
+fn print_grid(grid: GridRef) {
     println!();
-    for j in 0..grid.len() {
-        for i in 0..grid[j].len() {
-            match grid[j][i] {
+    for row in grid {
+        for c in row {
+            match c {
                 0 => print!("."),
                 1 => print!("#"),
                 _ => panic!("unknown char"),
@@ -22,8 +24,8 @@ fn change_stuck(grid: &mut Grid) {
     }
 }
 
-fn mutate(grid: &Grid) -> Grid {
-    let mut next = grid.clone();
+fn mutate(grid: GridRef) -> Grid {
+    let mut next = grid.to_owned();
     for j in 0..grid.len() {
         for i in 0..grid[j].len() {
             let ys = (j.saturating_sub(1), min(grid.len() - 1, j + 1));
@@ -37,7 +39,7 @@ fn mutate(grid: &Grid) -> Grid {
                 .sum::<usize>();
 
             match (grid[j][i], around) {
-                (1, a) if a < 2 || a > 3 => next[j][i] = 0,
+                (1, a) if !(2..=3).contains(&a) => next[j][i] = 0,
                 (0, 3) => next[j][i] = 1,
                 _ => {} // DO nothing, value did not change
             }
@@ -62,12 +64,12 @@ pub fn parse(input: &str) -> Grid {
         .collect()
 }
 
-pub fn part1(input: &Grid) -> usize {
+pub fn part1(input: GridRef) -> usize {
     evolve(input, 100, false)
 }
 
-pub fn evolve(input: &Grid, times: usize, stuck: bool) -> usize {
-    let mut input = input.clone();
+pub fn evolve(input: GridRef, times: usize, stuck: bool) -> usize {
+    let mut input = input.to_owned();
     stuck.then(|| change_stuck(&mut input));
     for step in 0..times {
         if cfg!(debug_assertions) {
@@ -80,7 +82,7 @@ pub fn evolve(input: &Grid, times: usize, stuck: bool) -> usize {
     input.iter().flatten().sum::<usize>()
 }
 
-pub fn part2(input: &Grid) -> usize {
+pub fn part2(input: GridRef) -> usize {
     evolve(input, 100, true)
 }
 
