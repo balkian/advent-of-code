@@ -1,56 +1,54 @@
+pub fn part1(input: &[Vec<usize>]) -> usize {
+    let input: Vec<_> = input.iter().collect();
+    let (min, max): (Vec<_>, Vec<_>) = (0..input[0].len()).map(|ix| minmax(&input, ix)).unzip();
+    it2num(min.iter()) * it2num(max.iter())
+}
+
+pub fn part2(input: &[Vec<usize>]) -> usize {
+    let input: &Vec<_> = &input.iter().collect();
+    let vmax = filter(input, true);
+    let vmin = filter(input, false);
+
+    it2num(vmax) * it2num(vmin)
+}
+
 pub fn parse(input: &str) -> Vec<Vec<usize>> {
     input
         .lines()
         .filter(|l| !l.is_empty())
         .map(|line| {
             line.chars()
-                .map(|c| c.to_string().parse::<usize>().unwrap())
+                .map(|c| c.to_string().parse().unwrap())
                 .collect()
         })
         .collect()
 }
 
-fn vec2number(input: &[usize]) -> usize {
-    input
-        .iter()
-        .rev()
-        .enumerate()
-        .map(|(ix, val)| val << ix)
-        .sum()
-}
-
-pub fn part1(input: &[Vec<usize>]) -> usize {
-    let input: Vec<&Vec<usize>> = input.iter().collect();
-    let (min, max) = minmax(&input);
-    vec2number(&max) * vec2number(&min)
-}
-
-pub fn minmax<'a>(input: &'a [&'a Vec<usize>]) -> (Vec<usize>, Vec<usize>) {
-    let counts = input.iter().fold(vec![0; input[0].len()], |mut acc, a| {
-        for ix in 0..a.len() {
-            acc[ix] += a[ix] as usize;
-        }
+fn it2num<'a, I>(input: I) -> usize
+where
+    I: IntoIterator<Item = &'a usize>,
+{
+    input.into_iter().fold(0, |mut acc, num| {
+        acc = (acc << 1) + num;
         acc
-    });
-    let mid = (input.len() + 1) / 2;
-    let max: Vec<usize> = counts
-        .iter()
-        .map(|c| if *c >= mid { 1 } else { 0 })
-        .collect();
-    let min: Vec<usize> = counts
-        .iter()
-        .map(|c| if *c >= mid { 0 } else { 1 })
-        .collect();
+    })
+}
 
-    (min, max)
+pub fn minmax<'a>(input: &'a [&'a Vec<usize>], ix: usize) -> (usize, usize) {
+    let count = input.iter().map(|v| v[ix]).sum::<usize>();
+    let mid = (input.len() + 1) / 2;
+    (
+        if count < mid { 0 } else { 1 },
+        if count >= mid { 0 } else { 1 },
+    )
 }
 
 fn filter<'a, 'b>(input: &'b [&'a Vec<usize>], max: bool) -> &'a Vec<usize> {
     let mut valid: Vec<_> = input.to_vec();
     for ix in 0..valid[0].len() {
-        let minmax = minmax(&valid);
+        let minmax = minmax(&valid, ix);
         let mask = if max { minmax.0 } else { minmax.1 };
-        valid = valid.into_iter().filter(|v| v[ix] == mask[ix]).collect();
+        valid = valid.into_iter().filter(|v| v[ix] == mask).collect();
         if valid.len() == 1 {
             break;
         }
@@ -60,14 +58,6 @@ fn filter<'a, 'b>(input: &'b [&'a Vec<usize>], max: bool) -> &'a Vec<usize> {
     } else {
         panic!("solution not found");
     }
-}
-
-pub fn part2(input: &[Vec<usize>]) -> usize {
-    let input: &Vec<&Vec<usize>> = &input.iter().collect();
-    let vmax = filter(input, true);
-    let vmin = filter(input, false);
-
-    vec2number(vmax) * vec2number(vmin)
 }
 
 #[test]
