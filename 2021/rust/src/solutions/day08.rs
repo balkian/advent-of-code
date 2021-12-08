@@ -101,5 +101,4 @@ fn test_example() {
         "be cfbegad cbdgef fgaecd cgeb fdcge agebfd fecdb fabcd edb | fdgacbe cefdb cefbgd gcbe",
     );
     assert_eq!(part2(&input[0..1]), 8394);
-    // assert_eq!(part2(input), 61229);
 }
