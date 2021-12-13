@@ -79,6 +79,6 @@ fn test_example() {
 8767896789
 9899965678",
     );
-    assert_eq!(part1(input), 607);
+    assert_eq!(part1(input), 15);
     assert_eq!(part2(input), 1134);
 }
