@@ -50,7 +50,7 @@ pub fn fold(dots: &[Dot], fold: &Fold) -> Vec<Dot> {
             }
         })
         .collect();
-    folds.sort();
+    folds.sort_unstable();
     folds.dedup();
     folds
 }

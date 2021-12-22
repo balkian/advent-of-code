@@ -38,6 +38,7 @@ pub fn parse(input: &str) -> Input {
         )
 }
 
+#[allow(clippy::nonminimal_bool)]
 pub fn part(input: &Input, twice: bool) -> usize {
     let mut finished = vec![];
     let mut paths = vec![vec![Start]];
@@ -53,7 +54,7 @@ pub fn part(input: &Input, twice: bool) -> usize {
             let num_small = small.len();
             small.sort();
             small.dedup();
-            debug_assert!(small.len() <= num_small + 1);
+            debug_assert!(small.len() - num_small <= 1);
             num_small == small.len()
         };
 
