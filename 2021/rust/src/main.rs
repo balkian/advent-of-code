@@ -1,5 +1,11 @@
 pub use std::env;
 
+mod solutions;
+
+fn main() {
+    solutions::main();
+}
+
 #[macro_export]
 macro_rules! aoc_main {
     ($($day:ident;)*) => {
@@ -45,8 +51,19 @@ macro_rules! aoc_test {
     };
 }
 
-mod solutions;
-
-fn main() {
-    solutions::main();
+/// Drop-in replacement for dbg that only prints in debug mode (not in release)
+#[macro_export]
+macro_rules! dbg {
+    ($($x:tt)*) => {
+        {
+            #[cfg(debug_assertions)]
+            {
+                std::dbg!($($x)*)
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                ($($x)*)
+            }
+        }
+    }
 }
