@@ -38,16 +38,17 @@ macro_rules! aoc_main {
 }
 
 #[macro_export]
-macro_rules! aoc_test {
-    ($part:ident, $name:ident, $input:expr, $expected:expr $(;)?) => {
+macro_rules! aoc_sample {
+    ($test:ident, $sample:literal, $part:ident, $expected:expr $(;)?) => {
         #[test]
-        fn $name () {
-            assert_eq!($part($input), $expected);
+        fn $test () {
+            let input = parse(include_str!($sample));
+            assert_eq!($part(&input), $expected);
         }
     };
-    ($part:ident, $name:ident, $input:expr, $expected:expr $(; $opart:ident, $oname:ident, $oinput:tt, $oexpected:expr)* $(;)?) => {
-        aoc_test!($part, $name, $input, $expected);
-        aoc_test!($($opart, $oname, $oinput, $oexpected;)*);
+    ($test:ident, $sample:literal, $part:ident, $expected:expr $(; $otest:ident, $osample:literal, $opart:ident, $oexpected:expr)* $(;)?) => {
+        aoc_test!($test, $sample, $part, $expected);
+        aoc_test!($($otest, $osample, $opart, $oexpected;)*);
     };
 }
 
