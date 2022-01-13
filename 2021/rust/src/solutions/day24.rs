@@ -11,6 +11,92 @@ pub fn part2(pc: &PC) -> Regtype {
     pc.find(true)
 }
 
+pub fn parse(input: &str) -> PC {
+    PC::parse(input)
+}
+
+#[derive(Debug, Clone)]
+pub struct PC<'a> {
+    program: Vec<Instruction<'a>>,
+}
+
+impl<'a> PC<'a> {
+    /// Find the biggest input that results in regs["z"] == 0 after running
+    /// the program.
+    fn find(&self, reverse: bool) -> Regtype {
+        let mut states = StateMap::new(reverse);
+        states.push(State::new());
+
+        while let Some(mut st) = states.pop() {
+            dbg!(
+                "Inst: {} States: {}. Seen: {}. Ignored: {}. Input: {:?}",
+                st.inst,
+                states.len(),
+                states.seen.len(),
+                states.ignored,
+                &st.input
+            );
+
+            // process the state until an input comes along
+            while st.inst < self.program.len() {
+                let inst = &self.program[st.inst];
+                st.inst += 1;
+                if matches!(inst, Single("inp", _)) {
+                    for inp in 1..10 {
+                        let mut st = st.clone();
+                        st.input.push(inp);
+                        st.apply(inst);
+                        states.push(st);
+                    }
+                    break;
+                }
+                st.apply(inst);
+            }
+
+            if st.inst == self.program.len() && st["z"] == 0 {
+                assert!(self.confirm(&st.input));
+                return st.input.into_iter().reduce(|acc, b| acc * 10 + b).unwrap();
+            }
+        }
+        panic!("solution not found");
+    }
+
+    fn confirm(&self, input: &[Regtype]) -> bool {
+        let mut state = State::new();
+        state.input.extend(input.iter());
+        for inst in self.program.iter() {
+            state.apply(inst);
+        }
+        state["z"] == 0
+    }
+
+    fn parse(input: &'a str) -> Self {
+        let program: Vec<Instruction> = input
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(|line| {
+                match line
+                    .trim()
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .as_slice()
+                {
+                    [cmd, a] => Single(cmd, a),
+                    [cmd, a, b] => {
+                        if let Ok(b) = b.parse::<Regtype>() {
+                            Direct(cmd, a, b)
+                        } else {
+                            Indirect(cmd, a, b)
+                        }
+                    }
+                    _ => panic!("unknown instruction type"),
+                }
+            })
+            .collect();
+        PC { program }
+    }
+}
+
 type Regtype = i64;
 
 #[derive(Debug, Clone)]
@@ -163,88 +249,4 @@ impl StateMap {
     fn len(&mut self) -> usize {
         self.heap.len()
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct PC<'a> {
-    program: Vec<Instruction<'a>>,
-}
-
-impl<'a> PC<'a> {
-    fn confirm(&self, input: &[Regtype]) -> bool {
-        let mut state = State::new();
-        state.input.extend(input.iter());
-        for inst in self.program.iter() {
-            state.apply(inst);
-        }
-        state["z"] == 0
-    }
-
-    fn find(&self, reverse: bool) -> Regtype {
-        let mut states = StateMap::new(reverse);
-        states.push(State::new());
-
-        while let Some(mut st) = states.pop() {
-            dbg!(
-                "Inst: {} States: {}. Seen: {}. Ignored: {}. Input: {:?}",
-                st.inst,
-                states.len(),
-                states.seen.len(),
-                states.ignored,
-                &st.input
-            );
-
-            // process the state until an input comes along
-            while st.inst < self.program.len() {
-                let inst = &self.program[st.inst];
-                st.inst += 1;
-                if matches!(inst, Single("inp", _)) {
-                    for inp in 1..10 {
-                        let mut st = st.clone();
-                        st.input.push(inp);
-                        st.apply(inst);
-                        states.push(st);
-                    }
-                    break;
-                }
-                st.apply(inst);
-            }
-
-            if st.inst == self.program.len() {
-                if st["z"] == 0 {
-                    assert!(self.confirm(&st.input));
-                    return st.input.into_iter().reduce(|acc, b| acc * 10 + b).unwrap();
-                } else {
-                    continue;
-                }
-            }
-        }
-        panic!("solution not found");
-    }
-}
-
-pub fn parse(input: &str) -> PC {
-    let program: Vec<Instruction> = input
-        .lines()
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            match line
-                .trim()
-                .split_whitespace()
-                .collect::<Vec<_>>()
-                .as_slice()
-            {
-                [cmd, a] => Single(cmd, a),
-                [cmd, a, b] => {
-                    if let Ok(b) = b.parse::<Regtype>() {
-                        Direct(cmd, a, b)
-                    } else {
-                        Indirect(cmd, a, b)
-                    }
-                }
-                _ => panic!("unknown instruction type"),
-            }
-        })
-        .collect();
-    PC { program }
 }
