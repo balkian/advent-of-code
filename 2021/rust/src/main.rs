@@ -9,13 +9,23 @@ fn main() {
 #[macro_export]
 macro_rules! aoc_main {
     ($($day:ident;)*) => {
+
+        use clap::{arg, Command};
         $(mod $day;)*
 
         pub fn main() {
-            match crate::env::args().nth(1) {
+            let args = Command::new("aoc")
+                .version("1.0")
+                .about("AoC solver")
+                .author("Fernando Sánchez")
+                .arg(arg!([day] "Day to solve").default_value("all"))
+                .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
+                .get_matches();
+
+            match args.value_of("day") {
                 $( Some(a) if a == stringify!($day) => {
+                    let fname = args.value_of("input").unwrap_or_else(|| stringify!($day.input));
                     println!(stringify!(* Running $day));
-                    let fname = stringify!($day.input);
                     let input = &std::fs::read_to_string(fname).expect("could not read input file");
                     let input = &$day::parse(input);
                     println!("\tPart 1 {}", $day::part1(input));
