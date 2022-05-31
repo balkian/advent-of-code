@@ -7,6 +7,45 @@ fn main() {
 }
 
 #[macro_export]
+macro_rules! timed {
+    ($title:literal, $($code:tt)+) => {
+
+        print!("{}: ", $title);
+        let now = std::time::Instant::now();
+        // we sleep for 2 seconds
+        let res = {$($code)+};
+
+        let elapsed = now.elapsed().as_millis();
+
+        println!("{}", res);
+        println!("Took: {:.2}s", (elapsed as f64) / 1000f64);
+
+    };
+}
+
+#[macro_export]
+macro_rules! solve_1 {
+    ($args:ident, $day:ident, $input:ident ) => {
+        match $args
+            .value_of("part")
+            .expect("the part argument should have a default value")
+        {
+            "1" | "a" => {
+                $crate::timed!("\tPart 1", $day::part1($input));
+            }
+            "2" | "b" => {
+                $crate::timed!("\tPart 2", $day::part2($input));
+            }
+            "all" => {
+                $crate::timed!("\tPart 1", $day::part1($input));
+                $crate::timed!("\tPart 2 ", $day::part2($input));
+            }
+            _ => panic!("Unknown parameter"),
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! aoc_main {
     ($($day:ident;)*) => {
 
@@ -19,8 +58,10 @@ macro_rules! aoc_main {
                 .about("AoC solver")
                 .author("Fernando Sánchez")
                 .arg(arg!([day] "Day to solve").default_value("all"))
+                .arg(arg!([part] "Part to solve (1, 2 or all)").default_value("all"))
                 .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
                 .get_matches();
+
 
             match args.value_of("day") {
                 $( Some(a) if a == stringify!($day) => {
@@ -28,8 +69,7 @@ macro_rules! aoc_main {
                     println!(stringify!(* Running $day));
                     let input = &std::fs::read_to_string(fname).expect("could not read input file");
                     let input = &$day::parse(input);
-                    println!("\tPart 1 {}", $day::part1(input));
-                    println!("\tPart 2 {}", $day::part2(input));
+                    $crate::solve_1!(args, $day, input);
                 },)*
                 Some(a) if a == "all" => {
                     $(println!(stringify!(* Running $day));
@@ -37,8 +77,7 @@ macro_rules! aoc_main {
                         let fname = stringify!($day.input);
                         let input = &std::fs::read_to_string(fname).expect("could not read input file");
                         let input = &$day::parse(input);
-                        println!("\tPart 1 {}", $day::part1(input));
-                        println!("\tPart 2 {}", $day::part2(input));
+                        $crate::solve_1!(args, $day, input);
                     )*
                 },
                 _ => println!("Solution not implemented"),
