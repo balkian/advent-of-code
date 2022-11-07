@@ -13,12 +13,21 @@ fn main() {
 
     f.write_all(b"use crate::aoc_main;\n\n").unwrap();
     dbg!(&sol_dir);
-    let mut paths: Vec<_> = fs::read_dir(sol_dir).unwrap().map(|r| r.unwrap()).collect();
-    paths.sort_by_key(|dir| dir.path());
+    let mut mods: Vec<_> = fs::read_dir(sol_dir)
+        .unwrap()
+        .map(|r| r.unwrap().path())
+        .filter_map(|p| {
+            if p.extension()?.to_str()?.ends_with("rs") {
+                Some(p.file_stem()?.to_str()?.to_owned())
+            } else {
+                None
+            }
+        })
+        .filter(|x| !x.starts_with('.'))
+        .collect();
+    mods.sort();
     f.write_all(b"aoc_main!(").unwrap();
-    for path in paths.into_iter() {
-        let fpath = path.path();
-        let mod_name = fpath.file_stem().unwrap().to_str().unwrap();
+    for mod_name in mods.into_iter() {
         f.write_all(format!("{};", mod_name).as_bytes()).unwrap();
     }
     f.write_all(b");").unwrap();

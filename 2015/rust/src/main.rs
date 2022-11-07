@@ -1,19 +1,75 @@
 pub use std::env;
 
+mod solutions;
+
+fn main() {
+    solutions::main();
+}
+
+#[macro_export]
+macro_rules! timed {
+    ($title:literal, $($code:tt)+) => {
+
+        print!("{}: ", $title);
+        let now = std::time::Instant::now();
+        // we sleep for 2 seconds
+        let res = {$($code)+};
+
+        let elapsed = now.elapsed().as_millis();
+
+        println!("{}", res);
+        println!("Took: {:.2}s", (elapsed as f64) / 1000f64);
+
+    };
+}
+
+#[macro_export]
+macro_rules! solve_1 {
+    ($args:ident, $day:ident, $input:ident ) => {
+        match $args
+            .value_of("part")
+            .expect("the part argument should have a default value")
+        {
+            "1" | "a" => {
+                $crate::timed!("\tPart 1", $day::part1($input));
+            }
+            "2" | "b" => {
+                $crate::timed!("\tPart 2", $day::part2($input));
+            }
+            "all" => {
+                $crate::timed!("\tPart 1", $day::part1($input));
+                $crate::timed!("\tPart 2 ", $day::part2($input));
+            }
+            _ => panic!("Unknown parameter"),
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! aoc_main {
     ($($day:ident;)*) => {
+
+        use clap::{arg, Command};
         $(mod $day;)*
 
         pub fn main() {
-            match $crate::env::args().nth(1) {
+            let args = Command::new("aoc")
+                .version("1.0")
+                .about("AoC solver")
+                .author("Fernando Sánchez")
+                .arg(arg!([day] "Day to solve").default_value("all"))
+                .arg(arg!([part] "Part to solve (1, 2 or all)").default_value("all"))
+                .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
+                .get_matches();
+
+
+            match args.value_of("day") {
                 $( Some(a) if a == stringify!($day) => {
+                    let fname = args.value_of("input").unwrap_or_else(|| stringify!($day.input));
                     println!(stringify!(* Running $day));
-                    let fname = stringify!($day.input);
-                    let input = &std::fs::read_to_string(fname).unwrap_or_else(|_| panic!("could not read input file: {fname}"));
-                    let input = &mut $day::parse(input);
-                    println!("\tPart 1 {}", $day::part1(input));
-                    println!("\tPart 2 {}", $day::part2(input));
+                    let input = &std::fs::read_to_string(fname).expect("could not read input file");
+                    let input = &$day::parse(input);
+                    $crate::solve_1!(args, $day, input);
                 },)*
                 Some(a) if a == "all" => {
                     $(println!(stringify!(* Running $day));
@@ -21,14 +77,28 @@ macro_rules! aoc_main {
                         let fname = stringify!($day.input);
                         let input = &std::fs::read_to_string(fname).expect("could not read input file");
                         let input = &$day::parse(input);
-                        println!("\tPart 1 {}", $day::part1(input));
-                        println!("\tPart 2 {}", $day::part2(input));
+                        $crate::solve_1!(args, $day, input);
                     )*
                 },
                 _ => println!("Solution not implemented"),
             }
         }
     }
+}
+
+#[macro_export]
+macro_rules! aoc_sample {
+    ($test:ident, $sample:literal, $part:ident, $expected:expr $(;)?) => {
+        #[test]
+        fn $test () {
+            let input = parse(include_str!($sample));
+            assert_eq!($part(&input), $expected);
+        }
+    };
+    ($test:ident, $sample:literal, $part:ident, $expected:expr $(; $otest:ident, $osample:literal, $opart:ident, $oexpected:expr)* $(;)?) => {
+        $crate::aoc_test!($test, $sample, $part, $expected);
+        $crate::aoc_test!($($otest, $osample, $opart, $oexpected;)*);
+    };
 }
 
 #[macro_export]
@@ -40,13 +110,24 @@ macro_rules! aoc_test {
         }
     };
     ($part:ident, $name:ident, $input:expr, $expected:expr $(; $opart:ident, $oname:ident, $oinput:tt, $oexpected:expr)* $(;)?) => {
-        aoc_test!($part, $name, $input, $expected);
-        aoc_test!($($opart, $oname, $oinput, $oexpected;)*);
+        $crate::aoc_test!($part, $name, $input, $expected);
+        $crate::aoc_test!($($opart, $oname, $oinput, $oexpected;)*);
     };
 }
 
-mod solutions;
-
-fn main() {
-    solutions::main();
+/// Drop-in replacement for dbg that only prints in debug mode (not in release)
+#[macro_export]
+macro_rules! dbg {
+    ($($x:tt)*) => {
+        {
+            #[cfg(debug_assertions)]
+            {
+                std::dbg!($($x)*)
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                ($($x)*)
+            }
+        }
+    }
 }
