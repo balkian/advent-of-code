@@ -13,6 +13,7 @@ enum State {
 
 #[derive(Debug, Clone)]
 pub struct Reindeer<'a> {
+    #[allow(dead_code)]
     name: &'a str,
     speed: usize,
     stamina: usize,

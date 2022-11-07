@@ -6,11 +6,11 @@ macro_rules! aoc_main {
         $(mod $day;)*
 
         pub fn main() {
-            match crate::env::args().nth(1) {
+            match $crate::env::args().nth(1) {
                 $( Some(a) if a == stringify!($day) => {
                     println!(stringify!(* Running $day));
                     let fname = stringify!($day.input);
-                    let input = &std::fs::read_to_string(fname).expect("could not read input file");
+                    let input = &std::fs::read_to_string(fname).unwrap_or_else(|_| panic!("could not read input file: {fname}"));
                     let input = &mut $day::parse(input);
                     println!("\tPart 1 {}", $day::part1(input));
                     println!("\tPart 2 {}", $day::part2(input));

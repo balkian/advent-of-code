@@ -7,12 +7,14 @@ lazy_static! {
 }
 
 fn diff(line: &str) -> usize {
-    let chars = RE.captures_iter(line).map(|cap| cap.get(1).unwrap().as_str().to_string());
+    let chars = RE
+        .captures_iter(line)
+        .map(|cap| cap.get(1).unwrap().as_str().to_string());
     line.len() - (chars.count() - 2)
 }
 
 fn diffinv(line: &str) -> usize {
-    2 + line.chars().filter(|x| x == &'"' || x == &'\\').count() 
+    2 + line.chars().filter(|x| x == &'"' || x == &'\\').count()
 }
 
 pub fn parse(input: &str) -> &str {
@@ -20,23 +22,22 @@ pub fn parse(input: &str) -> &str {
 }
 
 pub fn part1(input: &str) -> usize {
-    input.lines().map(|line| diff(line)).sum()
+    input.lines().map(diff).sum()
 }
 
 pub fn part2(input: &str) -> usize {
-    input.lines().map(|line| diffinv(line)).sum()
+    input.lines().map(diffinv).sum()
 }
 
-
-aoc_test!{
-    part1, example, {&parse(r#"""
+aoc_test! {
+   part1, example, {&parse(r#"""
 "abc"
 "aaa\"aaa"
 "\x27"
 "#)}, 12;
-    part2, example_inv, {&parse(r#"""
+   part2, example_inv, {&parse(r#"""
 "abc"
 "aaa\"aaa"
 "\x27"
 "#)}, 19;
- }
+}
