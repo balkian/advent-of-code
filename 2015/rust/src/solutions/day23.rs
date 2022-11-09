@@ -49,7 +49,7 @@ fn reg_index(c: char) -> usize {
 impl PC {
     fn parse(input: &str) -> Self {
         PC {
-            program: input.lines().map(|line| Instruction::parse(line)).collect(),
+            program: input.lines().map(Instruction::parse).collect(),
             ..Default::default()
         }
     }

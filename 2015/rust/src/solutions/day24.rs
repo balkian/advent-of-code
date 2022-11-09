@@ -1,5 +1,3 @@
-use crate::dbg;
-
 pub fn parse(input: &str) -> Vec<usize> {
     let mut v = input.lines().flat_map(str::parse).collect::<Vec<usize>>();
     v.sort();

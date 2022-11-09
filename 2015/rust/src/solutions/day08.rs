@@ -30,12 +30,12 @@ pub fn part2(input: &str) -> usize {
 }
 
 aoc_test! {
-   part1, example, {&parse(r#"""
+   part1, example, {parse(r#"""
 "abc"
 "aaa\"aaa"
 "\x27"
 "#)}, 12;
-   part2, example_inv, {&parse(r#"""
+   part2, example_inv, {parse(r#"""
 "abc"
 "aaa\"aaa"
 "\x27"
