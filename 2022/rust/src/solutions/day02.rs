@@ -29,7 +29,7 @@ pub fn part1(input: &[(usize, usize)]) -> usize {
     input
         .iter()
         .map(|(a, b)| match (a-1, b-1) {
-            (a,b) if a == b => 3,
+            (a, b) if a == b => 3,
             (a, b) if b == win(a) => 6,
             _ => 0,
         } + b)
