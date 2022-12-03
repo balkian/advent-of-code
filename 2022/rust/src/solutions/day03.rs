@@ -8,16 +8,17 @@ pub fn parse(input: &str) -> Vec<Sack> {
         .lines()
         .filter(|line| !line.is_empty())
         .map(|line| {
-            let line = line.trim();
-            line.as_bytes()
+            line.trim()
+                .as_bytes()
+                .iter()
                 .chunks(line.len() / 2)
+                .into_iter()
                 .map(|w| {
-                    w.iter()
-                        .map(|l| match *l as char {
-                            'a'..='z' => l - ('a' as u8) + 1,
-                            'A'..='Z' => l - ('A' as u8) + 27,
-                            _ => panic!("unknown character"),
-                        } as usize)
+                    w.map(|l| match *l as char {
+                        'a'..='z' => l - b'a' + 1,
+                        'A'..='Z' => l - b'A' + 27,
+                        _ => panic!("unknown character"),
+                    } as usize)
                         .collect()
                 })
                 .collect::<Vec<_>>()
@@ -34,12 +35,12 @@ pub fn part1(input: &[Sack]) -> usize {
         .sum()
 }
 pub fn part2(input: &[Sack]) -> usize {
-    let joint: Vec<HashSet<usize>> = input.iter().map(|sack| &sack[0] | &sack[1]).collect();
-    joint
-        .into_iter()
+    input
+        .iter()
+        .map(|sack| &sack[0] | &sack[1])
         .chunks(3)
         .into_iter()
         .map(|chunk| chunk.into_iter().reduce(|a, b| &a & &b).unwrap())
-        .map(|union| dbg!(union).iter().sum::<usize>())
+        .map(|union| union.iter().sum::<usize>())
         .sum::<usize>()
 }
