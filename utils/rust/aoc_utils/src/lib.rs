@@ -1,38 +1,34 @@
+pub use clap::{arg, value_parser, Arg, ArgAction, Command};
 use reqwest::blocking::Client;
 pub use std::env;
 use std::fs::{read_to_string, File};
+
 use std::io;
 use std::path::PathBuf;
 pub extern crate clap;
 
-#[macro_export]
-macro_rules! timed {
-    ($timeit:tt, $title:literal, $($code:tt)+) => {
-
-        print!("{}: ", $title);
-        let now = std::time::Instant::now();
-        // we sleep for 2 seconds
-        let res = {$($code)+};
-
-
-        print!("{:<15}", res);
-        if $timeit {
-            let mut elapsed = now.elapsed().as_nanos() as f64;
-            let mut exp = 0;
-            let mut unit = "s";
-            for i in ["ns", "µs", "ms"] {
-                if elapsed < 1000.0 {
-                    unit = i;
-                    break;
-                }
-                elapsed /= 1000f64;
+pub fn timed<T>(timeit: bool, title: &str, code: impl FnOnce() -> T)
+where
+    T: std::fmt::Display,
+{
+    print!("{}: ", title);
+    let now = std::time::Instant::now();
+    let res = code();
+    print!("{:<15}", res);
+    if timeit {
+        let mut elapsed = now.elapsed().as_nanos() as f64;
+        let mut unit = "s";
+        for i in ["ns", "µs", "ms"] {
+            if elapsed < 1000.0 {
+                unit = i;
+                break;
             }
-
-            print!(" Took: {:.0} {}", elapsed, unit);
+            elapsed /= 1000f64;
         }
-        println!();
 
-    };
+        print!(" Took: {:.0} {}", elapsed, unit);
+    }
+    println!();
 }
 
 pub fn download_day(day: &str, year: Option<usize>, fpath: &PathBuf) {
@@ -93,14 +89,14 @@ macro_rules! solve_1 {
             .expect("the part argument should have a default value")
         {
             "1" | "a" => {
-                $crate::timed!($timeit, "\tPart 1", $day::part1(input));
+                $crate::timed($timeit, "\tPart 1", || { $day::part1(input)} );
             }
             "2" | "b" => {
-                $crate::timed!($timeit, "\tPart 2", $day::part2(input));
+                $crate::timed($timeit, "\tPart 2", || { $day::part2(input)} );
             }
             "all" => {
-                $crate::timed!($timeit, "\tPart 1", $day::part1(input));
-                $crate::timed!($timeit, "\tPart 2", $day::part2(input));
+                $crate::timed($timeit, "\tPart 1", || { $day::part1(input)} );
+                $crate::timed($timeit, "\tPart 2", || { $day::part2(input)} );
             }
             _ => panic!("Unknown parameter"),
         }
@@ -111,32 +107,31 @@ macro_rules! solve_1 {
 macro_rules! aoc_main {
     ($($day:ident;)*) => {
 
-        use $crate::clap::{arg, Command, Arg, ArgAction};
         $(mod $day;)*
 
         const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 
         pub fn main() {
 
-            let args = Command::new("aoc")
+            let args = $crate::Command::new("aoc")
                 .version("1.0")
                 .about("AoC solver")
                 .author("Fernando Sánchez")
-                .arg(arg!([day] "Day to solve").default_value("all"))
-                .arg(arg!([part] "Part to solve (1, 2 or all)").default_value("all"))
-                .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
+                .arg($crate::arg!([day] "Day to solve").default_value("all"))
+                .arg($crate::arg!([part] "Part to solve (1, 2 or all)").default_value("all"))
+                .arg($crate::arg!(-i --input <VALUE> "Input file to solve").required(false))
                 .arg(
-                    arg!(-y --year <YEAR>)
+                    $crate::arg!(-y --year <YEAR>)
                         .required(false)
                         .help("Year of the event you're solving")
                         .default_value(&PKG_NAME[PKG_NAME.len()-4..])
-                        .value_parser($crate::clap::value_parser!(usize)),
+                        .value_parser($crate::value_parser!(usize)),
                 )
                 .arg(
-                    Arg::new("notimes")
+                    $crate::Arg::new("notimes")
                         .long("no-times")
                         .short('T')
-                        .action(ArgAction::SetTrue)
+                        .action($crate::ArgAction::SetTrue)
                         .help("Do not show timing information."))
                 .get_matches();
 
