@@ -5,24 +5,36 @@ pub mod build;
 
 #[macro_export]
 macro_rules! timed {
-    ($title:literal, $($code:tt)+) => {
+    ($timeit:tt, $title:literal, $($code:tt)+) => {
 
         print!("{}: ", $title);
         let now = std::time::Instant::now();
         // we sleep for 2 seconds
         let res = {$($code)+};
 
-        let elapsed = now.elapsed().as_millis();
 
         println!("{}", res);
-        println!("Took: {:.2}s", (elapsed as f64) / 1000f64);
+        if $timeit {
+            let mut elapsed = now.elapsed().as_nanos() as f64;
+            let mut exp = 0;
+            let mut unit = "s";
+            for i in ["ns", "µs", "ms"] {
+                if elapsed < 1000.0 {
+                    unit = i;
+                    break;
+                }
+                elapsed /= 1000f64;
+            }
+
+            println!("\t# Took: {:.0} {}", elapsed, unit);
+        }
 
     };
 }
 
 #[macro_export]
 macro_rules! solve_1 {
-    ($args:ident, $day:ident, $input:expr ) => {
+    ($args:ident, $day:ident, $input:expr, $timeit:tt ) => {
         let st = stringify!($day.input);
         let i_f = std::path::Path::new("../inputs").join(st);
         let def_file = i_f.to_str().unwrap();
@@ -36,14 +48,14 @@ macro_rules! solve_1 {
             .expect("the part argument should have a default value")
         {
             "1" | "a" => {
-                $crate::timed!("\tPart 1", $day::part1(input));
+                $crate::timed!($timeit, "\tPart 1", $day::part1(input));
             }
             "2" | "b" => {
-                $crate::timed!("\tPart 2", $day::part2(input));
+                $crate::timed!($timeit, "\tPart 2", $day::part2(input));
             }
             "all" => {
-                $crate::timed!("\tPart 1", $day::part1(input));
-                $crate::timed!("\tPart 2 ", $day::part2(input));
+                $crate::timed!($timeit, "\tPart 1", $day::part1(input));
+                $crate::timed!($timeit, "\tPart 2", $day::part2(input));
             }
             _ => panic!("Unknown parameter"),
         }
@@ -54,7 +66,7 @@ macro_rules! solve_1 {
 macro_rules! aoc_main {
     ($($day:ident;)*) => {
 
-        use $crate::clap::{arg, Command};
+        use $crate::clap::{arg, Command, Arg, ArgAction};
         $(mod $day;)*
 
         pub fn main() {
@@ -65,17 +77,24 @@ macro_rules! aoc_main {
                 .arg(arg!([day] "Day to solve").default_value("all"))
                 .arg(arg!([part] "Part to solve (1, 2 or all)").default_value("all"))
                 .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
+                .arg(
+                    Arg::new("timed")
+                        .long("timed")
+                        .short('t')
+                        .action(ArgAction::SetTrue)
+                        .help("Time solutions"))
                 .get_matches();
 
             let input = args.value_of("input");
+            let timeit = args.get_flag("timed");
 
             match args.value_of("day") {
                 $( Some(a) if a == stringify!($day) => {
-                    $crate::solve_1!(args, $day, input);
+                    $crate::solve_1!(args, $day, input, timeit);
                 },)*
                 Some(a) if a == "all" => {
                     $(
-                    $crate::solve_1!(args, $day, None);
+                    $crate::solve_1!(args, $day, None, timeit);
                     )*
                 },
                 _ => println!("Solution not implemented"),
