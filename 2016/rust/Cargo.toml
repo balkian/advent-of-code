@@ -1,0 +1,19 @@
+[package]
+name = "aoc2016"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "aoc2022"
+path = "src/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aoc_utils = { path = "../../utils/rust/aoc_utils"}
+itertools = "0.10.5"
+regex = "1.7.0"
+
+[build-dependencies]
+aoc_builder = { path = "../../utils/rust/aoc_builder" }
