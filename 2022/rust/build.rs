@@ -1,4 +1,4 @@
-use aoc_utils::build::main as amain;
+use aoc_builder::main as amain;
 
 fn main() {
     amain();

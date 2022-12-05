@@ -1,7 +1,9 @@
+use reqwest::blocking::Client;
 pub use std::env;
+use std::fs::{read_to_string, File};
+use std::io;
+use std::path::PathBuf;
 pub extern crate clap;
-
-pub mod build;
 
 #[macro_export]
 macro_rules! timed {
@@ -13,7 +15,7 @@ macro_rules! timed {
         let res = {$($code)+};
 
 
-        println!("{}", res);
+        print!("{:<15}", res);
         if $timeit {
             let mut elapsed = now.elapsed().as_nanos() as f64;
             let mut exp = 0;
@@ -26,20 +28,63 @@ macro_rules! timed {
                 elapsed /= 1000f64;
             }
 
-            println!("\t# Took: {:.0} {}", elapsed, unit);
+            print!(" Took: {:.0} {}", elapsed, unit);
         }
+        println!();
 
     };
 }
 
+pub fn download_day(day: &str, year: Option<usize>, fpath: &PathBuf) {
+    if fpath.exists() {
+        return;
+    }
+    eprintln!(
+        "Input file not found. Downloading into: {}",
+        fpath.to_str().unwrap()
+    );
+    let year = year.expect("specify the year so the input file can be downloaded");
+    let day: usize = day[3..].parse().unwrap();
+    let mut session = None;
+
+    let mut current_dir: Option<PathBuf> = env::current_dir().ok();
+    while let Some(dir) = current_dir {
+        if let Ok(sess) = read_to_string(dir.join(".aoc-session")) {
+            session = Some(sess.trim().to_string());
+            break;
+        }
+        current_dir = dir.parent().map(|d| d.to_path_buf());
+    }
+    let session = session.expect("could not read a session file (.aoc-session)");
+    let client = Client::new();
+    let url = format!("https://adventofcode.com/{year}/day/{day}/input");
+    let resp = client
+        .get(url)
+        .header("Cookie", format!("session={session}"))
+        .send()
+        .expect("request failed");
+    let body = resp.text().expect("body invalid");
+    let mut out = File::create(fpath).expect("failed to create file");
+    io::copy(&mut body.as_bytes(), &mut out).expect("failed to copy content");
+}
+
 #[macro_export]
 macro_rules! solve_1 {
-    ($args:ident, $day:ident, $input:expr, $timeit:tt ) => {
+    ($args:ident, $day:ident, $year:ident, $input:expr, $timeit:tt ) => {
         let st = stringify!($day.input);
-        let i_f = std::path::Path::new("../inputs").join(st);
+        let mut inputs = std::path::Path::new("../inputs");
+        if !inputs.exists() {
+            eprintln!("Folder ../inputs does not exist");
+            inputs = std::path::Path::new("inputs");
+        }
+        let i_f = inputs.join(st);
+        $crate::download_day(stringify!($day), $year, &i_f);
+
         let def_file = i_f.to_str().unwrap();
+
         let fname = $input.unwrap_or(def_file);
-        println!(stringify!(* Running $day));
+        println!(stringify!(* Running $day, $year));
+
         let input = &std::fs::read_to_string(fname).expect("could not read input file");
         let input = &$day::parse(input);
 
@@ -69,7 +114,10 @@ macro_rules! aoc_main {
         use $crate::clap::{arg, Command, Arg, ArgAction};
         $(mod $day;)*
 
+        const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+
         pub fn main() {
+
             let args = Command::new("aoc")
                 .version("1.0")
                 .about("AoC solver")
@@ -78,23 +126,31 @@ macro_rules! aoc_main {
                 .arg(arg!([part] "Part to solve (1, 2 or all)").default_value("all"))
                 .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
                 .arg(
-                    Arg::new("timed")
-                        .long("timed")
-                        .short('t')
+                    arg!(-y --year <YEAR>)
+                        .required(false)
+                        .help("Year of the event you're solving")
+                        .default_value(&PKG_NAME[PKG_NAME.len()-4..])
+                        .value_parser($crate::clap::value_parser!(usize)),
+                )
+                .arg(
+                    Arg::new("notimes")
+                        .long("no-times")
+                        .short('T')
                         .action(ArgAction::SetTrue)
-                        .help("Time solutions"))
+                        .help("Do not show timing information."))
                 .get_matches();
 
             let input = args.value_of("input");
-            let timeit = args.get_flag("timed");
+            let timeit = !args.get_flag("notimes");
+            let year = args.get_one("year").copied();
 
             match args.value_of("day") {
                 $( Some(a) if a == stringify!($day) => {
-                    $crate::solve_1!(args, $day, input, timeit);
+                    $crate::solve_1!(args, $day, year, input, timeit);
                 },)*
                 Some(a) if a == "all" => {
                     $(
-                    $crate::solve_1!(args, $day, None, timeit);
+                    $crate::solve_1!(args, $day, year, None, timeit);
                     )*
                 },
                 _ => println!("Solution not implemented"),
@@ -112,6 +168,7 @@ macro_rules! aoc_sample {
             assert_eq!($part(&input), $expected);
         }
     };
+
     ($test:ident, $sample:literal, $part:ident, $expected:expr $(; $otest:ident, $osample:literal, $opart:ident, $oexpected:expr)* $(;)?) => {
         $crate::aoc_test!($test, $sample, $part, $expected);
         $crate::aoc_test!($($otest, $osample, $opart, $oexpected;)*);
