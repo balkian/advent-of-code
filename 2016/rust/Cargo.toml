@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 aoc_utils = { path = "../../utils/rust/aoc_utils"}
+counter = "0.5.7"
 itertools = "0.10.5"
 regex = "1.7.0"
 
