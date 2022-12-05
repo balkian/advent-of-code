@@ -22,20 +22,28 @@ macro_rules! timed {
 
 #[macro_export]
 macro_rules! solve_1 {
-    ($args:ident, $day:ident, $input:ident ) => {
+    ($args:ident, $day:ident, $input:expr ) => {
+        let st = stringify!($day.input);
+        let i_f = std::path::Path::new("../inputs").join(st);
+        let def_file = i_f.to_str().unwrap();
+        let fname = $input.unwrap_or(def_file);
+        println!(stringify!(* Running $day));
+        let input = &std::fs::read_to_string(fname).expect("could not read input file");
+        let input = &$day::parse(input);
+
         match $args
             .value_of("part")
             .expect("the part argument should have a default value")
         {
             "1" | "a" => {
-                $crate::timed!("\tPart 1", $day::part1($input));
+                $crate::timed!("\tPart 1", $day::part1(input));
             }
             "2" | "b" => {
-                $crate::timed!("\tPart 2", $day::part2($input));
+                $crate::timed!("\tPart 2", $day::part2(input));
             }
             "all" => {
-                $crate::timed!("\tPart 1", $day::part1($input));
-                $crate::timed!("\tPart 2 ", $day::part2($input));
+                $crate::timed!("\tPart 1", $day::part1(input));
+                $crate::timed!("\tPart 2 ", $day::part2(input));
             }
             _ => panic!("Unknown parameter"),
         }
@@ -59,25 +67,15 @@ macro_rules! aoc_main {
                 .arg(arg!(-i --input <VALUE> "Input file to solve").required(false))
                 .get_matches();
 
+            let input = args.value_of("input");
 
             match args.value_of("day") {
                 $( Some(a) if a == stringify!($day) => {
-                    let st = stringify!($day.input);
-                    let i_f = std::path::Path::new("../inputs").join(st);
-                    let def_file = i_f.to_str().unwrap();
-                    let fname = args.value_of("input").unwrap_or(def_file);
-                    println!(stringify!(* Running $day));
-                    let input = &std::fs::read_to_string(fname).expect("could not read input file");
-                    let input = &$day::parse(input);
                     $crate::solve_1!(args, $day, input);
                 },)*
                 Some(a) if a == "all" => {
-                    $(println!(stringify!(* Running $day));
-
-                        let fname = stringify!($day.input);
-                        let input = &std::fs::read_to_string(fname).expect("could not read input file");
-                        let input = &$day::parse(input);
-                        $crate::solve_1!(args, $day, input);
+                    $(
+                    $crate::solve_1!(args, $day, None);
                     )*
                 },
                 _ => println!("Solution not implemented"),
