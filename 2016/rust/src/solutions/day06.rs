@@ -5,7 +5,7 @@ pub fn parse(input: &str) -> Vec<String> {
 }
 
 pub fn solve(input: &[String], max: bool) -> String {
-    let mut counters = input.iter().fold(
+    let counters = input.iter().fold(
         vec![Counter::<char>::new(); input[0].len()],
         |mut acc, word| {
             acc.iter_mut().zip(word.chars()).for_each(|(count, w)| {
@@ -29,6 +29,7 @@ pub fn solve(input: &[String], max: bool) -> String {
 pub fn part1(input: &[String]) -> String {
     solve(input, true)
 }
+
 pub fn part2(input: &[String]) -> String {
     solve(input, false)
 }
