@@ -7,7 +7,7 @@
 ///
 /// TODO: Revisit this problem in the future and clean it up.
 
-/// Using nom was a good decision
+/// Using nom was a good decision. I could've just parsed it manually, but I took this as a chance to learn nom
 use nom::branch::alt;
 use nom::{
     bytes::complete::{is_not, tag, take_till, take_while_m_n},
