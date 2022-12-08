@@ -10,19 +10,15 @@
 /// Using nom was a good decision. I could've just parsed it manually, but I took this as a chance to learn nom
 use nom::branch::alt;
 use nom::{
-    bytes::complete::{is_not, tag, take_till, take_while_m_n},
-    character::complete::{alpha1, char, digit1, multispace0, multispace1, newline, space1},
-    character::{is_newline, is_space},
-    combinator::{map, map_res, not},
+    bytes::complete::{tag, take_till},
+    character::complete::{digit1, multispace0, multispace1, newline},
+    combinator::map,
     multi::{many0, many1},
-    sequence::{delimited, preceded, terminated, tuple},
+    sequence::{preceded, terminated, tuple},
     IResult,
 };
 
-use itertools::Itertools;
-use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
-use std::iter;
 
 /// I've chosen a totally wrong data structure (enums)
 /// At some point
@@ -98,7 +94,7 @@ fn calculate_size(inodes: &mut FS, name: &str) -> usize {
     match node {
         Node::File(_, size) => size,
         Node::Dir(_, Some(size), _) => size,
-        Node::Dir(dirname, ref mut a, ref v) => {
+        Node::Dir(_dirname, ref mut a, ref v) => {
             let v = v.clone();
             let size = v.iter().map(|s| calculate_size(inodes, s)).sum::<usize>();
             *a = Some(size);

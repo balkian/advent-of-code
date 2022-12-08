@@ -1,5 +1,4 @@
-type Grid = Vec<Vec<isize>>;
-pub fn parse(input: &str) -> Grid {
+pub fn parse(input: &str) -> Vec<Vec<isize>> {
     input
         .lines()
         .filter(|line| !line.is_empty())
@@ -43,7 +42,6 @@ pub fn part1(input: &[Vec<isize>]) -> usize {
             }
         }
     }
-    dbg!(&visible);
     visible.iter().flatten().filter(|c| **c).count()
 }
 
@@ -54,12 +52,12 @@ pub fn part2(input: &[Vec<isize>]) -> usize {
             let count_x = (0..i)
                 .rev()
                 .enumerate()
-                .find(|&(x, di)| input[di][j] >= tree)
+                .find(|&(_x, di)| input[di][j] >= tree)
                 .map(|(ix, _)| ix + 1)
                 .unwrap_or(i);
             let count_x_rev = ((i + 1)..input.len())
                 .enumerate()
-                .find(|&(ix, di)| input[di][j] >= tree)
+                .find(|&(_ix, di)| input[di][j] >= tree)
                 .map(|(ix, _)| ix + 1)
                 .unwrap_or(input.len() - i - 1);
             let count_y = (0..j)
