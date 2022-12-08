@@ -66,14 +66,15 @@ fn lsfile(input: &str) -> IResult<&str, Node> {
 fn command(input: &str) -> IResult<&str, Cmd> {
     let ls = map(
         preceded(tuple((tag("ls"), newline)), many0(alt((lsdir, lsfile)))),
-        |nodes: Vec<Node>| Cmd::Ls(nodes),
+        Cmd::Ls,
     );
-    let cd = map(preceded(tag("cd "), dirname), |s: &str| Cmd::Cd(s));
+    let cd = map(preceded(tag("cd "), dirname), Cmd::Cd);
     preceded(tag("$ "), alt((cd, ls)))(input)
 }
 
 type FS<'a> = HashMap<String, Node<'a>>;
 
+#[allow(dead_code)]
 fn print_hierarchy(s: &FS) {
     println!();
     let mut stack = vec![(0, "/")];
@@ -122,7 +123,7 @@ pub fn parse(input: &str) -> FS {
                 match dir {
                     "/" => path = "/".to_string(),
                     ".." => {
-                        path = path.rsplit_once("/").unwrap().0.to_string();
+                        path = path.rsplit_once('/').unwrap().0.to_string();
                     }
                     name => {
                         path = path.clone() + "/" + name;
@@ -153,7 +154,7 @@ pub fn parse(input: &str) -> FS {
 }
 
 pub fn part1(input: &FS) -> usize {
-    let mut fs = input.clone();
+    let fs = input.clone();
     fs.values().fold(0, |acc, f| {
         acc + match f {
             Node::Dir(_, Some(size), _) if *size <= 100000 => *size,
