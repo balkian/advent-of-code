@@ -1,7 +1,8 @@
 use itertools::Itertools;
 use regex::Regex;
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BinaryHeap, HashSet, VecDeque};
+// use std::cmp::Ordering;
+// use std::collections::BinaryHeap;
+use std::collections::{BTreeMap, HashSet, VecDeque};
 
 type Edges<'a> = BTreeMap<&'a str, usize>;
 type Graph<'a> = BTreeMap<&'a str, Edges<'a>>;
@@ -14,26 +15,26 @@ pub struct Input<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct State<'a> {
+struct State<'a, const N: usize> {
     edges: &'a Graph<'a>,
     flows: &'a BTreeMap<&'a str, usize>,
     valves: Valves<'a>,
     remaining: usize,
     total: usize,
-    positions: [&'a str; 2],
-    last_move: [usize; 2],
+    positions: [&'a str; N],
+    last_move: [usize; N],
 }
 
-impl<'a> State<'a> {
+impl<'a, const N: usize> State<'a, N> {
     fn new(input: &'a Input, remaining: usize) -> Self {
         State {
             flows: &input.flows,
             edges: &input.edges,
             valves: vec![],
             remaining: remaining,
-            last_move: [remaining; 2],
+            last_move: [remaining; N],
             total: 0,
-            positions: [input.edges.keys().find(|k| *k == &"AA").unwrap(); 2],
+            positions: [input.edges.keys().find(|k| *k == &"AA").unwrap(); N],
         }
     }
 
@@ -54,22 +55,21 @@ impl<'a> State<'a> {
     }
 }
 
-impl<'a> Ord for State<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.remaining
-            .cmp(&other.remaining)
-            .then_with(|| self.total.cmp(&other.total))
-    }
-}
+// This was required by the BinaryHeap. But it's even faster without it.
+// impl<'a> Ord for State<'a> {
+//     fn cmp(&self, other: &Self) -> Ordering {
+//         self.max_expected().cmp(&other.max_expected())
+//     }
+// }
 
-impl<'a> PartialOrd for State<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
+// impl<'a> PartialOrd for State<'a> {
+//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+//         Some(self.cmp(other))
+//     }
+// }
 
-impl<'a> State<'a> {
-    fn explore<'b>(&'b self, idx: usize) -> Vec<State<'a>>
+impl<'a, const N: usize> State<'a, N> {
+    fn explore<'b>(&'b self, idx: usize) -> Vec<State<'a, N>>
     where
         'a: 'b,
     {
@@ -141,54 +141,25 @@ pub fn parse(input: &str) -> Input {
         }
         edges.insert(valve, others.into_iter().map(|v| (v, 1)).collect());
     }
-    let mut edges = bfs(&edges);
-    simplify(&mut edges, &flows, true);
+    let edges = bfs(&edges);
     Input { edges, flows }
 }
 
-fn simplify<'a>(
-    edges: &mut BTreeMap<&'a str, BTreeMap<&'a str, usize>>,
-    flows: &BTreeMap<&'a str, usize>,
-    first: bool,
-) {
-    let nodes: Vec<&str> = edges.keys().map(|s| *s).collect();
-    for node in nodes {
-        if (first && node == "AA") || flows.contains_key(&node) {
-            continue;
-        }
-        let outsies: BTreeMap<_, _> = edges.get(&node).unwrap().clone();
-        for (other, other_edges) in edges.iter_mut() {
-            if other == &node {
-                continue;
-            }
-            if let Some(delta) = other_edges.remove(&node) {
-                for (out, dist) in outsies.iter() {
-                    if out == other {
-                        continue;
-                    }
-                    let val = other_edges.entry(out).or_insert(usize::MAX);
-                    *val = std::cmp::min(*val, dist + delta);
-                }
-            }
-        }
-    }
-}
+pub fn solve<const N: usize>(input: &Input, remaining: usize) -> usize {
+    // let mut opts = BinaryHeap::new();
+    let mut opts = vec![];
 
-pub fn solve(input: &Input, indices: &[usize], remaining: usize) -> usize {
-    let mut opts = BinaryHeap::new();
-
-    let mut s = State::new(input, remaining);
-    opts.push(s);
-    let mut best: Option<State> = None;
+    opts.push(State::new(input, remaining));
+    let mut best: Option<State<N>> = None;
     let mut visited: HashSet<(Vec<(&str, usize)>, Vec<_>)> = HashSet::new();
     while let Some(state) = opts.pop() {
-        dbg!((state.remaining, opts.len()));
+        // dbg!((state.remaining, opts.len()));
         let key = (
             state
                 .positions
                 .iter()
                 .copied()
-                .zip(state.last_move.iter().map(|last| state.remaining - last))
+                .zip(state.last_move.iter().copied())
                 .sorted()
                 .collect_vec()
                 .try_into()
@@ -219,8 +190,8 @@ pub fn solve(input: &Input, indices: &[usize], remaining: usize) -> usize {
             }
             (Some(State { total: b, .. }), _) => *b,
         };
-        for idx in indices {
-            for opt in state.explore(*idx) {
+        for idx in 0..N {
+            for opt in state.explore(idx) {
                 if opt.max_expected() >= max {
                     opts.push(opt);
                 }
@@ -228,13 +199,13 @@ pub fn solve(input: &Input, indices: &[usize], remaining: usize) -> usize {
         }
     }
     let best = best.unwrap();
-    dbg!(best.valves);
+    // dbg!(best.valves);
     best.total
 }
 
 pub fn part1(input: &Input) -> usize {
-    solve(input, &[0], 30)
+    solve::<1>(input, 30)
 }
 pub fn part2(input: &Input) -> usize {
-    solve(input, &[0, 1], 26)
+    solve::<2>(input, 26)
 }
