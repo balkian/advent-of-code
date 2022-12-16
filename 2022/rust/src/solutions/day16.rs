@@ -31,7 +31,7 @@ impl<'a, const N: usize> State<'a, N> {
             flows: &input.flows,
             edges: &input.edges,
             valves: vec![],
-            remaining: remaining,
+            remaining,
             last_move: [remaining; N],
             total: 0,
             positions: [input.edges.keys().find(|k| *k == &"AA").unwrap(); N],
@@ -132,14 +132,21 @@ pub fn parse(input: &str) -> Input {
     for line in input.lines().filter(|line| !line.is_empty()) {
         let cap = re
             .captures(line)
-            .expect(&format!("no match for line {line}"));
+            .unwrap_or_else(|| panic!("no match for line {line}"));
         let valve = cap.get(1).unwrap().as_str();
         let flow = cap[2].parse().unwrap();
-        let others: Vec<_> = cap.get(3).unwrap().as_str().split(", ").collect();
         if flow != 0 {
             flows.insert(valve, flow);
         }
-        edges.insert(valve, others.into_iter().map(|v| (v, 1)).collect());
+        edges.insert(
+            valve,
+            cap.get(3)
+                .unwrap()
+                .as_str()
+                .split(", ")
+                .map(|v| (v, 1))
+                .collect(),
+        );
     }
     let edges = bfs(&edges);
     Input { edges, flows }
@@ -161,15 +168,8 @@ pub fn solve<const N: usize>(input: &Input, remaining: usize) -> usize {
                 .copied()
                 .zip(state.last_move.iter().copied())
                 .sorted()
-                .collect_vec()
-                .try_into()
-                .unwrap(),
-            state
-                .valves
-                .iter()
-                .map(|(i, _)| i.clone())
-                .sorted()
-                .collect(),
+                .collect_vec(),
+            state.valves.iter().sorted().copied().collect(),
         );
         if visited.contains(&key) {
             continue;
