@@ -1,27 +1,26 @@
 use itertools::Itertools;
 use regex::Regex;
-// use std::cmp::Ordering;
-// use std::collections::BinaryHeap;
 use std::collections::{BTreeMap, HashSet, VecDeque};
 
-type Edges<'a> = BTreeMap<&'a str, usize>;
-type Graph<'a> = BTreeMap<&'a str, Edges<'a>>;
-type Valves<'a> = Vec<(&'a str, usize)>;
+type Edges = Vec<usize>;
+type Graph = Vec<Edges>;
+type Valves = Vec<usize>;
 
 #[derive(Debug)]
 pub struct Input<'a> {
-    edges: Graph<'a>,
-    flows: BTreeMap<&'a str, usize>,
+    edges: Graph,
+    names: Vec<&'a str>,
+    flows: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct State<'a, const N: usize> {
-    edges: &'a Graph<'a>,
-    flows: &'a BTreeMap<&'a str, usize>,
-    valves: Valves<'a>,
+    edges: &'a Graph,
+    flows: &'a Vec<usize>,
+    valves: Valves,
     remaining: usize,
     total: usize,
-    positions: [&'a str; N],
+    positions: [usize; N],
     last_move: [usize; N],
 }
 
@@ -30,12 +29,24 @@ impl<'a, const N: usize> State<'a, N> {
         State {
             flows: &input.flows,
             edges: &input.edges,
-            valves: vec![],
+            valves: vec![usize::MAX; input.names.len()],
             remaining,
             last_move: [remaining; N],
             total: 0,
-            positions: [input.edges.keys().find(|k| *k == &"AA").unwrap(); N],
+            positions: [0; N],
         }
+    }
+
+    fn to_key(&self) -> (Vec<(usize, usize)>, Valves) {
+        (
+            self.positions
+                .iter()
+                .copied()
+                .zip(self.last_move.iter().copied())
+                .sorted()
+                .collect_vec(),
+            self.valves.clone(),
+        )
     }
 
     fn max_expected(&self) -> usize {
@@ -43,8 +54,9 @@ impl<'a, const N: usize> State<'a, N> {
             + self
                 .flows
                 .iter()
+                .enumerate()
                 .filter_map(|(name, flow)| {
-                    if self.valves.iter().any(|(v, _)| v == name) {
+                    if self.valves[name] != usize::MAX {
                         None
                     } else {
                         Some(flow)
@@ -55,37 +67,22 @@ impl<'a, const N: usize> State<'a, N> {
     }
 }
 
-// This was required by the BinaryHeap. But it's even faster without it.
-// impl<'a> Ord for State<'a> {
-//     fn cmp(&self, other: &Self) -> Ordering {
-//         self.max_expected().cmp(&other.max_expected())
-//     }
-// }
-
-// impl<'a> PartialOrd for State<'a> {
-//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-//         Some(self.cmp(other))
-//     }
-// }
-
 impl<'a, const N: usize> State<'a, N> {
     fn explore<'b>(&'b self, idx: usize) -> Vec<State<'a, N>>
     where
         'a: 'b,
     {
         let mut opts = vec![];
-        for (other, distance) in &self.edges[self.positions[idx]] {
+        for (other, distance) in self.edges[self.positions[idx]].iter().enumerate() {
             // if !self.flows.contains_key(other)
-            if other == &self.positions[idx]
+            if other == self.positions[idx]
                 || self.last_move[idx] <= distance + 1
-                || self.valves.iter().any(|(i, _)| i == other)
+                || (&self.valves)[other] != usize::MAX
             {
                 continue;
             }
 
-            let Some((_, delta)) = self.flows.iter().find(|(i, _)| i == &other) else {
-                continue;
-            };
+            let delta = self.flows[other];
             let mut out = self.clone();
             out.positions[idx] = other;
             out.last_move[idx] = self.last_move[idx] - distance - 1;
@@ -93,41 +90,22 @@ impl<'a, const N: usize> State<'a, N> {
                 out.remaining = out.last_move[idx];
             }
             out.total += out.last_move[idx] * delta;
-            out.valves.push((other, out.last_move[idx]));
+            out.valves[other] = out.last_move[idx];
             opts.push(out);
         }
         opts
     }
 }
 
-fn bfs<'a>(graph: &Graph<'a>) -> Graph<'a> {
-    let mut out: Graph = Default::default();
-
-    for node in graph.keys() {
-        let mut edges: Edges = Default::default();
-        let mut opts = VecDeque::new();
-        opts.push_front((node, 0));
-        while edges.len() < graph.len() {
-            let (curr, dist) = opts.pop_front().unwrap();
-            for (hop, delta) in graph.get(curr).expect("node not in the graph!") {
-                let d = delta + dist;
-                let v = edges.entry(hop).or_insert(usize::MAX);
-                *v = std::cmp::min(*v, d);
-                opts.push_back((hop, d));
-            }
-        }
-        out.insert(node, edges);
-    }
-    out
-}
-
+static ROOT: &str = "AA";
 // Valve EF has flow rate=22; tunnels lead to valves FK, HT, DE
 pub fn parse(input: &str) -> Input {
     let re = Regex::new(
         r"Valve (?P<valve>\w+) has flow rate=(?P<flow>\d+); tunnel[s]? lead[s]? to valve[s]? (?P<others>.*)",
     )
     .expect("wrong regex");
-    let mut edges: BTreeMap<&str, BTreeMap<_, _>> = BTreeMap::new();
+    let mut names = vec![ROOT];
+    let mut graph: BTreeMap<&str, BTreeMap<&str, usize>> = BTreeMap::new();
     let mut flows: BTreeMap<&str, usize> = BTreeMap::new();
     for line in input.lines().filter(|line| !line.is_empty()) {
         let cap = re
@@ -135,42 +113,57 @@ pub fn parse(input: &str) -> Input {
             .unwrap_or_else(|| panic!("no match for line {line}"));
         let valve = cap.get(1).unwrap().as_str();
         let flow = cap[2].parse().unwrap();
-        if flow != 0 {
+        if flow != 0 || valve == ROOT {
             flows.insert(valve, flow);
+            if valve != ROOT {
+                names.push(valve);
+            }
         }
-        edges.insert(
+        graph.insert(
             valve,
             cap.get(3)
                 .unwrap()
                 .as_str()
                 .split(", ")
-                .map(|v| (v, 1))
+                .map(|valve| (valve, 1))
                 .collect(),
         );
     }
-    let edges = bfs(&edges);
-    Input { edges, flows }
+
+    let mut out: Graph = vec![Default::default(); names.len()];
+
+    for (idx, node) in names.iter().enumerate() {
+        let mut edges: Edges = vec![usize::MAX; names.len()];
+        let mut opts = VecDeque::new();
+        opts.push_front((node, 0));
+        while edges.iter().any(|v| *v == usize::MAX) {
+            let (curr, dist) = opts.pop_front().unwrap();
+            for (hop, delta) in graph.get(curr).expect("node not in the graph!") {
+                let d = delta + dist;
+                if let Some(pos) = names.iter().position(|n| n == hop) {
+                    let v = &mut edges[pos];
+                    *v = std::cmp::min(*v, d);
+                }
+
+                opts.push_back((hop, d));
+            }
+        }
+        out[idx] = edges;
+    }
+
+    Input {
+        edges: out,
+        flows: names.iter().map(|name| *flows.get(name).unwrap()).collect(),
+        names,
+    }
 }
 
 pub fn solve<const N: usize>(input: &Input, remaining: usize) -> usize {
-    // let mut opts = BinaryHeap::new();
-    let mut opts = vec![];
-
-    opts.push(State::new(input, remaining));
+    let mut opts = vec![State::new(input, remaining)];
     let mut best: Option<State<N>> = None;
-    let mut visited: HashSet<(Vec<(&str, usize)>, Vec<_>)> = HashSet::new();
+    let mut visited = HashSet::new();
     while let Some(state) = opts.pop() {
-        // dbg!((state.remaining, opts.len()));
-        let key = (
-            state
-                .positions
-                .iter()
-                .copied()
-                .zip(state.last_move.iter().copied())
-                .sorted()
-                .collect_vec(),
-            state.valves.iter().sorted().copied().collect(),
-        );
+        let key = state.to_key();
         if visited.contains(&key) {
             continue;
         }
