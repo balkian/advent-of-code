@@ -22,10 +22,13 @@ static ROCKS_STR: &str = r"
 ##
 ";
 
-static W: usize = 7;
-// static DEBUG: bool = true;
+const W: usize = 7;
 static DEBUG: bool = false;
+// static DEBUG: bool = true;
+
 type Input<'a> = Vec<Move>;
+type Key<'a> = (Vec<[bool; W]>, Option<&'a Template>, usize);
+type Template = HashSet<(usize, usize)>;
 
 #[derive(Debug, Clone)]
 pub enum Move {
@@ -34,12 +37,12 @@ pub enum Move {
     Down,
 }
 
-type Template = HashSet<(usize, usize)>;
 #[derive(Debug)]
 pub struct Rock<'a> {
     template: &'a Template,
     pos: (usize, usize),
 }
+
 impl<'a> Rock<'a> {
     fn new(template: &'a Template, height: usize) -> Self {
         Self {
@@ -71,17 +74,38 @@ struct Map<'a> {
 impl<'a> Map<'a> {
     fn new() -> Self {
         Self {
+            fixed: vec![[true; W]],
             ..Default::default()
         }
     }
 
     fn len(&self) -> usize {
         self.fixed.len()
+            - self
+                .fixed
+                .iter()
+                .rev()
+                .take_while(|row| row.iter().all(|c| !*c))
+                .count()
+            - 1
     }
+
+    fn to_key(&self, wind: usize) -> Key<'a> {
+        let top: Vec<_> = self
+            .fixed
+            .iter()
+            .rev()
+            .skip_while(|a| a.iter().all(|cell| !cell))
+            .take_while(|a| a.iter().any(|cell| !cell))
+            .copied()
+            .collect();
+        (top, self.rock.as_ref().map(|r| r.template), wind)
+    }
+
     fn insert(&mut self) {
         let rock = self.rock.take().unwrap();
         assert!(rock.iter().any(|(i, j)| i == 1 || self.fixed[i - 1][j]));
-        dbg!("Inserting", &rock);
+        // dbg!("Inserting", &rock);
         for (i, j) in rock.iter() {
             while i >= self.fixed.len() {
                 self.fixed.push(Default::default());
@@ -91,12 +115,36 @@ impl<'a> Map<'a> {
         }
         self.max_height = std::cmp::max(
             self.max_height,
-            rock.iter()
-                .map(|(i, _)| i)
-                .max()
-                .unwrap_or_else(|| usize::MAX),
+            rock.iter().map(|(i, _)| i).max().unwrap_or(usize::MAX),
         );
+        self.simplify();
     }
+
+    fn simplify(&mut self) {
+        // println!("SIMPLIFYING");
+        self.draw();
+        let mut blocked = [false; W];
+        for row in self.fixed.iter_mut().rev() {
+            let mut accessible: [bool; W] = blocked
+                .iter()
+                .map(|b| !b)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            for ix in 1..W {
+                accessible[ix] |= !row[ix - 1] & accessible[ix - 1];
+            }
+            for ix in (0..W - 1).rev() {
+                accessible[ix] |= !row[ix + 1] & accessible[ix + 1];
+            }
+            for ix in 0..W {
+                row[ix] = row[ix] || !accessible[ix];
+            }
+            blocked = *row;
+        }
+        self.draw();
+    }
+
     fn update(&mut self, dir: &Move) -> bool {
         let Some(ref rock) = self.rock else {
             return true;
@@ -105,7 +153,7 @@ impl<'a> Map<'a> {
             Move::Right if rock.pos.1 < 6 => (rock.pos.0, rock.pos.1 + 1),
             Move::Left if rock.pos.1 > 0 => (rock.pos.0, rock.pos.1 - 1),
             Move::Down => {
-                if rock.pos.0 > 1 && self.can_move(rock, (rock.pos.0 - 1, rock.pos.1)) {
+                if self.can_move(rock, (rock.pos.0 - 1, rock.pos.1)) {
                     (rock.pos.0 - 1, rock.pos.1)
                 } else {
                     return true;
@@ -122,8 +170,8 @@ impl<'a> Map<'a> {
     }
 
     fn begin(&mut self, tpl: &'a Template) {
-        let rock = Rock::new(tpl, dbg!(self.max_height) + 4);
-        while self.len() < rock.pos.0 + rock.template.len() {
+        let rock = Rock::new(tpl, self.max_height + 4);
+        while self.fixed.len() < rock.pos.0 + rock.template.len() {
             self.fixed.push(Default::default());
         }
         self.rock = Some(rock);
@@ -166,6 +214,9 @@ impl<'a> Map<'a> {
                 print!("{}", c);
             }
             println!();
+            if row.iter().all(|c| *c) {
+                return;
+            }
         }
     }
 }
@@ -216,37 +267,57 @@ pub fn parse(input: &str) -> Input {
         .collect()
 }
 
-pub fn part1(input: &Input) -> usize {
+pub fn solve(input: &Input, n_rocks: usize) -> usize {
     let rocks = ROCKS.get().unwrap();
     let mut map = Map::new();
-    let n_rocks = 2022;
-    // let n_rocks = 11;
-    let mut wind = input.iter().cycle().intersperse(&Move::Down);
-    // let mut wind = input.iter().cycle();
-    for tpl in rocks.iter().cycle().take(n_rocks) {
+    let mut cache: Vec<(Key, usize)> = vec![];
+    let mut wind =
+        Itertools::intersperse(input.iter().enumerate().cycle(), (input.len(), &Move::Down));
+
+    for (i, (_tpl_nr, tpl)) in rocks.iter().enumerate().cycle().enumerate().take(n_rocks) {
+        let (wind_nr, mut last_wind) = wind.next().unwrap();
+        // wind_hist.push(last.clone());
         map.begin(tpl);
-        // println!("NEW ROCK");
-        let mut last = wind.next().unwrap();
-        map.draw();
-        while !map.update(dbg!(last)) {
-            last = wind.next().unwrap();
+        let key = map.to_key(wind_nr);
+
+        if DEBUG {
+            println!("ROCK #{i}");
         }
-        // assert!(matches!(last, Move::Down));
-        // loop {
-        //     map.update(dbg!(wind.next().unwrap()));
-        //     if map.update(&Move::Down) {
-        //         break;
-        //         // dir = wind.next().unwrap();
-        //     }
-        //     map.draw();
-        // }
+        map.draw();
+
+        if let Some((idx, (_, last_subtotal))) =
+            cache.iter().enumerate().find(|(_idx, (k, _v))| *k == key)
+        {
+            let cycle_len = cache.len() - idx;
+            let diff = map.len() - last_subtotal;
+            let remaining = n_rocks - i;
+
+            let mut total = map.len() + (remaining / cycle_len) * diff;
+            total += cache[idx + (remaining % cycle_len)].1 - last_subtotal;
+
+            // println!("Match with Rock #{idx}");
+            return total;
+        }
+        cache.push((key, map.len()));
+
+        loop {
+            if map.update(last_wind) {
+                break;
+            }
+            last_wind = wind.next().unwrap().1;
+        }
         map.insert();
     }
     map.draw();
+    println!("Cache size: {}", cache.len());
 
     map.max_height
 }
 
+pub fn part1(input: &Input) -> usize {
+    solve(input, 2022)
+}
+
 pub fn part2(input: &Input) -> usize {
-    0
+    solve(input, 1000000000000)
 }
