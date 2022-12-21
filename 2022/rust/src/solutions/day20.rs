@@ -30,9 +30,9 @@ impl Message {
         let delta = delta.rem_euclid((self.0.len() - 1) as isize) as usize;
         let mut prev = self.0[pos].prev;
         let mut next = self.0[pos].next;
+        self.0[next].prev = prev;
+        self.0[prev].next = next;
         for _i in 0..delta as usize {
-            self.0[next].prev = prev;
-            self.0[prev].next = next;
             prev = next;
             next = self.0[next].next;
         }
