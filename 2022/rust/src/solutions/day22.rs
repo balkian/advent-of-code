@@ -150,9 +150,7 @@ pub fn parse(input: &str) -> Map {
             row.iter()
                 .enumerate()
                 .map(move |(j, t)| ((i, j), t.clone()))
-        })
-        .filter(|(_pos, t)| matches!(t, Tile::Empty))
-        .next()
+        }).find(|(_pos, t)| matches!(t, Tile::Empty))
         .unwrap()
         .0;
 
@@ -163,7 +161,7 @@ pub fn parse(input: &str) -> Map {
             buff.push(c);
             continue;
         }
-        if buff.len() > 0 {
+        if !buff.is_empty() {
             cmds.push(Command::Move(buff.parse().unwrap()));
             buff.clear();
         }
@@ -218,12 +216,12 @@ impl Cube {
                     point: new_point,
                     normal: pos.normal,
                 },
-                dir.clone(),
+                *dir,
             )
         } else {
             let new_dir = -pos.normal;
             let new_pos = Pos3D {
-                normal: dir.clone(),
+                normal: *dir,
                 point: pos.point,
             };
             (new_pos, new_dir)
@@ -267,14 +265,14 @@ impl Cube {
             mapping,
             cursor: Pos3D {
                 point: Default::default(),
-                normal: start3d.normal.clone(),
+                normal: start3d.normal,
             },
             dir: startdir,
             cmds: map.cmds.clone(),
         };
 
         let mut queue = vec![];
-        queue.push((start2d, start2ddir, start3d.clone(), startdir.clone()));
+        queue.push((start2d, start2ddir, start3d, startdir));
         let mut walls_2d = HashSet::new();
 
         while let Some((pos2, dir2, pos3, dir3)) = queue.pop() {
@@ -286,13 +284,13 @@ impl Cube {
                 Tile::Void => continue,
                 Tile::Wall => {
                     cube.walls.insert(pos3.clone());
-                    walls_2d.insert(pos2.clone());
+                    walls_2d.insert(pos2);
                 }
                 _ => {}
             }
             cube.mapping.insert(key, pos2);
             let four_directions = [
-                (dir2, dir3.clone()),
+                (dir2, dir3),
                 (-dir2, -dir3),
                 (Vector2::new(dir2[1], -dir2[0]), pos3.normal.cross(&dir3)),
                 (Vector2::new(-dir2[1], dir2[0]), -(pos3.normal.cross(&dir3))),

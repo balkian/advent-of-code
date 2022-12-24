@@ -86,31 +86,28 @@ impl Node {
     }
 
     fn balance(&self) -> Option<Self> {
-        match self {
-            Node::Op(Op::Eq, a, b) => match (a.as_ref(), b.as_ref()) {
-                (a @ &Node::Num(i), Node::Op(op, b, c))
-                | (Node::Op(op, b, c), a @ &Node::Num(i)) => {
-                    let (left, right) = match (op, b.value(), c.value()) {
-                        //     (&Node::Num(b), c) | (c, &Node::Num(b)) => {
-                        (Op::Add, Some(_), None) => (c.clone(), a - b),
-                        (Op::Add, None, Some(_)) => (b.clone(), a - c),
-                        (Op::Sub, Some(_), None) => (c.clone(), &**b - a),
-                        (Op::Sub, None, Some(_)) => (b.clone(), a + c),
-                        (Op::Mul, None, Some(j)) if i % j == 0 => (b.clone(), a / c),
-                        (Op::Mul, Some(j), None) if i % j == 0 => (c.clone(), a / b),
-                        (Op::Div, Some(j), None) if j % i == 0_ => (c.clone(), &(**b).clone() / a),
-                        (Op::Div, None, Some(_)) => (b.clone(), a * c),
-                        _ => todo!(),
-                    };
-                    return Some(Node::Op(
-                        Op::Eq,
-                        Box::new(left.simplify().unwrap()),
-                        Box::new(right.simplify().unwrap()),
-                    ));
-                }
-                _ => {}
-            },
-            _ => {}
+        if let Node::Op(Op::Eq, a, b) = self {
+            if let (a @ &Node::Num(i), Node::Op(op, b, c))
+            | (Node::Op(op, b, c), a @ &Node::Num(i)) = (a.as_ref(), b.as_ref())
+            {
+                let (left, right) = match (op, b.value(), c.value()) {
+                    //     (&Node::Num(b), c) | (c, &Node::Num(b)) => {
+                    (Op::Add, Some(_), None) => (c.clone(), a - b),
+                    (Op::Add, None, Some(_)) => (b.clone(), a - c),
+                    (Op::Sub, Some(_), None) => (c.clone(), &**b - a),
+                    (Op::Sub, None, Some(_)) => (b.clone(), a + c),
+                    (Op::Mul, None, Some(j)) if i % j == 0 => (b.clone(), a / c),
+                    (Op::Mul, Some(j), None) if i % j == 0 => (c.clone(), a / b),
+                    (Op::Div, Some(j), None) if j % i == 0 => (c.clone(), &(**b).clone() / a),
+                    (Op::Div, None, Some(_)) => (b.clone(), a * c),
+                    _ => todo!(),
+                };
+                return Some(Node::Op(
+                    Op::Eq,
+                    Box::new(left.simplify().unwrap()),
+                    Box::new(right.simplify().unwrap()),
+                ));
+            }
         }
         None
     }
@@ -148,7 +145,7 @@ pub fn parse(input: &str) -> TreeDef {
         if let Ok(num) = r.trim().parse::<i128>() {
             out.insert(l, Node::Num(num));
         } else {
-            let toks: Vec<_> = r.trim().split_whitespace().collect();
+            let toks: Vec<_> = r.split_whitespace().collect();
             stack.push_front((l, toks[0], toks[1], toks[2]));
         }
     }
@@ -172,14 +169,10 @@ pub fn part2(input: &TreeDef) -> i128 {
     while let Some(new_root) = root.balance() {
         root = new_root;
     }
-    match root {
-        Node::Op(Op::Eq, a, b) => match (*a, *b) {
-            (num, Node::Human) | (Node::Human, num) => {
-                return num.value().unwrap();
-            }
-            _ => {}
-        },
-        _ => {}
+    if let Node::Op(Op::Eq, a, b) = root {
+        if let (num, Node::Human) | (Node::Human, num) = (*a, *b) {
+            return num.value().unwrap();
+        }
     }
     panic!("no human on either side");
 }

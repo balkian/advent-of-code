@@ -51,7 +51,7 @@ impl Map {
 
         for elf in self.elves.iter() {
             if let Some(next) = self.propose(elf) {
-                proposals.entry(next).or_default().push(elf.clone());
+                proposals.entry(next).or_default().push(*elf);
             }
         }
         for (proposed, mut elves) in proposals.into_iter() {
@@ -87,12 +87,12 @@ impl Map {
             let delta = POSITIONS[ix];
             let fixed = delta.iter().position(|c| c == &0).unwrap();
             let nonfixed = (fixed + 1) % 2;
-            let mut pos = elf.clone();
+            let mut pos = *elf;
             pos[nonfixed] = elf[nonfixed] + delta[nonfixed];
             for di in -1..=1 {
-                let mut pos = pos.clone();
+                let mut pos = pos;
                 pos[fixed] += di;
-                if let Some(_) = self.elves.get(&pos) {
+                if self.elves.get(&pos).is_some() {
                     continue 'positions;
                 }
             }
