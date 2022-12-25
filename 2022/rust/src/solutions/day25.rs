@@ -23,22 +23,21 @@ fn to_snafu(mut num: isize) -> String {
         return "".into();
     }
     let rem = num % 5;
-    let mut out = String::new();
-    match rem {
+    let out = match rem {
         0..=2 => {
-            out = rem.to_string();
             num -= rem;
+            rem.to_string()
         }
         3 => {
-            out = "=".into();
             num += 2;
+            "=".into()
         }
         4 => {
-            out = "-".into();
             num += 1;
+            "-".into()
         }
         _ => unreachable!(),
-    }
+    };
     to_snafu(num / 5) + &out
 }
 
@@ -46,6 +45,6 @@ pub fn part1(input: &[isize]) -> String {
     to_snafu(input.iter().sum::<isize>())
 }
 
-pub fn part2(input: &[isize]) -> String {
-    todo!();
+pub fn part2(_input: &[isize]) -> String {
+    String::from("AoC done for the year! Weee!")
 }
