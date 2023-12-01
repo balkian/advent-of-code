@@ -5,7 +5,7 @@ edition = "2021"
 build = "build.rs"
 
 [[bin]]
-name = "aoc2022"
+name = "aoc2016"
 path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

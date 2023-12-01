@@ -313,8 +313,8 @@ const fn position(pod: &Amphipod) -> usize {
 fn estimate(pod: &Amphipod, idx: usize) -> usize {
     let pos = position(pod);
     let delta = match pos.cmp(&idx) {
-        Ordering::Less => (idx - pos),
-        Ordering::Greater => (pos - idx),
+        Ordering::Less => idx - pos,
+        Ordering::Greater => pos - idx,
         _ => return 0,
     };
     delta * cost(pod)

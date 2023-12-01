@@ -15,8 +15,7 @@ fn main() {
     dbg!(&sol_dir);
     let mut mods: Vec<_> = fs::read_dir(sol_dir)
         .unwrap()
-        .map(|r| r.unwrap()
-             .path())
+        .map(|r| r.unwrap().path())
         .filter_map(|p| {
             if p.extension()?.to_str()?.ends_with("rs") {
                 Some(p.file_stem()?.to_str()?.to_owned())
