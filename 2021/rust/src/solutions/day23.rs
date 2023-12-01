@@ -421,7 +421,7 @@ mod test {
         let result = &opts[0];
         dbg!(&result.cells);
         assert_eq!(result.repr(), expected.repr());
-        assert_eq!(result.cost, 5 * cost('B'));
+        assert_eq!(result.cost, 5 * cost(&'B'));
     }
 
     #[ignore]
