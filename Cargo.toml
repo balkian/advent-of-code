@@ -1,0 +1,8 @@
+[workspace]
+resolver = "2"
+package.version = "0.1"
+package.name = "balkians-aoc-solutions"
+members = ["*/rust/", "utils/rust/*"]
+# Exclude 2018 and 2020 because they are themselves workspaces
+# Exclude utils/rust because that's just a folder
+exclude = ["2018/rust", "2020/rust", "utils/rust/"]
