@@ -21,6 +21,7 @@
           fenix.packages.${system}.minimal.toolchain;
         pkgs = nixpkgs.legacyPackages.${system};
         my-crate = craneLib.buildPackage {
+            pname = "balkians-aoc-solutions";
             src = ./. ;
             nativeBuildInputs = [ pkgs.pkg-config ];
             buildInputs = [ pkgs.openssl ];
