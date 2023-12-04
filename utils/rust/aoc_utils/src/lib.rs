@@ -7,14 +7,11 @@ use std::io;
 use std::path::PathBuf;
 pub extern crate clap;
 
-pub fn timed<T>(timeit: bool, title: &str, code: impl FnOnce() -> T)
-where
-    T: std::fmt::Display,
+pub fn section<T>(timeit: bool, title: &str, code: impl FnOnce() -> T) -> T
 {
-    print!("{}: ", title);
+    print!("{} ", title);
     let now = std::time::Instant::now();
     let res = code();
-    print!("{:<15}", res);
     if timeit {
         let mut elapsed = now.elapsed().as_nanos() as f64;
         let mut unit = "s";
@@ -29,6 +26,7 @@ where
         print!(" Took: {:.0} {}", elapsed, unit);
     }
     println!();
+    res
 }
 
 pub fn download_day(day: &str, year: Option<usize>, fpath: &PathBuf) {
@@ -82,23 +80,37 @@ macro_rules! solve_1 {
         println!(stringify!(* Running $day, $year));
 
         let input = &std::fs::read_to_string(fname).expect("could not read input file");
-        let input = &$day::parse(input);
+        let input = &$crate::section($timeit, "\tParsing...", || {$day::parse(input)});
+        //let input = &$day::parse(input);
 
-        match $args
+        let parts = match $args
             .value_of("part")
             .expect("the part argument should have a default value")
         {
             "1" | "a" => {
-                $crate::timed($timeit, "\tPart 1", || { $day::part1(input)} );
+                (true, false)
             }
             "2" | "b" => {
-                $crate::timed($timeit, "\tPart 2", || { $day::part2(input)} );
+                (false, true)
             }
             "all" => {
-                $crate::timed($timeit, "\tPart 1", || { $day::part1(input)} );
-                $crate::timed($timeit, "\tPart 2", || { $day::part2(input)} );
+                (true, true)
             }
             _ => panic!("Unknown parameter"),
+        };
+        if parts.0 {
+            $crate::section($timeit, "\tPart 1:", || {
+                let res = $day::part1(input);
+                print!("{res:<15}");
+                res
+            });
+        }
+        if parts.1 {
+            $crate::section($timeit, "\tPart 2:", || {
+                let res = $day::part2(input);
+                print!("{res:<15}");
+                res
+            });
         }
     };
 }
