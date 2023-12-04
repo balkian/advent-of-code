@@ -77,7 +77,7 @@ macro_rules! solve_1 {
         let def_file = i_f.to_str().unwrap();
 
         let fname = $input.unwrap_or(def_file);
-        println!(stringify!(* Running $day, $year));
+        println!("* Running {} {}", stringify!($day), $year.map(|y| y.to_string()).unwrap_or(String::new()));
 
         let input = &std::fs::read_to_string(fname).expect("could not read input file");
         let input = &$crate::section($timeit, "\tParsing...", || {$day::parse(input)});
