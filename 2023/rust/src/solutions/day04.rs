@@ -2,8 +2,8 @@ use nom::{
     bytes::complete::tag,
     character::complete::{digit1, multispace1, space0, space1},
     combinator::{map_res, recognize},
-    multi::{separated_list0, separated_list1},
-    sequence::{delimited, separated_pair, terminated, tuple},
+    multi::{separated_list1},
+    sequence::{delimited, separated_pair, tuple},
     IResult,
 };
 
@@ -11,6 +11,7 @@ use std::collections::BTreeSet;
 
 #[derive(Debug)]
 pub struct Card {
+    #[allow(dead_code)]
     id: usize,
     winning: BTreeSet<usize>,
     present: BTreeSet<usize>,
@@ -39,6 +40,7 @@ pub fn parse(input: &str) -> Vec<Card> {
         )),
     )(input)
     .expect("could not parse cards");
+    assert!(rest.trim().is_empty());
     cards
         .into_iter()
         .map(|(id, (winning, present))| Card {

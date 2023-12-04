@@ -1,5 +1,3 @@
 mod solutions;
 
-fn main() {
-    solutions::main();
-}
+fn main() { solutions::main(); }
