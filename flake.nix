@@ -17,8 +17,14 @@
   outputs = { self, crane, nixpkgs, flake-utils,fenix }:
     flake-utils.lib.eachDefaultSystem (system: 
       let
-        craneLib = crane.lib.${system}.overrideToolchain
-          fenix.packages.${system}.minimal.toolchain;
+        craneLib = crane.lib.${system}.overrideToolchain (with pkgs; (fenix.packages.${system}.stable.withComponents [
+              "cargo"
+              "clippy"
+              "rust-src"
+              "rustc"
+              "rustfmt"
+            ]));
+          # fenix.packages.${system}.complete.toolchain;
         pkgs = nixpkgs.legacyPackages.${system};
         my-crate = craneLib.buildPackage {
             pname = "balkians-aoc-solutions";
