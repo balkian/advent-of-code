@@ -24,7 +24,7 @@ impl<'a> TryFrom<&'a str> for Map<'a> {
             .map(|line| line.as_bytes())
             .collect();
         let mut m = Map {
-            lines: lines,
+            lines,
             start: [0, 0],
         };
         m.set_start()?;
@@ -83,8 +83,8 @@ impl<'a> Map<'a> {
     }
 
     fn find_loop(&self) -> Vec<Coord> {
-        let mut heads: Vec<Coord> = self.connections(&self.start).map(|c| c).collect();
-        let mut paths: Vec<Vec<Coord>> = vec![vec![self.start.clone()]; heads.len()];
+        let mut heads: Vec<Coord> = self.connections(&self.start).collect();
+        let mut paths: Vec<Vec<Coord>> = vec![vec![self.start]; heads.len()];
         while !heads.is_empty() {
             // dbg!(&heads);
             // dbg!(&paths);
@@ -97,7 +97,7 @@ impl<'a> Map<'a> {
                     }
                     if heads[ix] == heads[jx] {
                         let mut v1 = paths[ix].clone();
-                        v1.push(heads[ix].clone());
+                        v1.push(heads[ix]);
                         v1.extend(paths[jx].iter().skip(1).copied().rev());
                         return v1;
                     }
@@ -110,11 +110,7 @@ impl<'a> Map<'a> {
                     d.remove(prev);
                     d.pop().and_then(
                         |next_head| {
-                            if d.len() == 0 {
-                                Some(next_head)
-                            } else {
-                                None
-                            }
+                            d.is_empty().then_some(next_head)
                         },
                     )
                 }) {
@@ -143,11 +139,10 @@ pub fn part1(map: &Map) -> usize {
 }
 pub fn part2(map: &Map) -> usize {
     let path = map.find_loop();
-    let prev = path
+    let prev = *path
         .last()
-        .expect("loop is too small (<2 elements)")
-        .clone();
-    let next = path[1].clone();
+        .expect("loop is too small (<2 elements)");
+    let next = path[1];
     // HashSet is around 2x as fast in this specific case
     let path: HashSet<Coord> = path.into_iter().collect();
     let mut inside = 0;
@@ -170,13 +165,11 @@ pub fn part2(map: &Map) -> usize {
                     }
                     _ => {}
                 }
-            } else {
-                if crossings % 2 != 0 {
+            } else  if crossings % 2 != 0 {
                     inside += 1;
                     // print!("I");
-                } else {
+            // } else {
                     // print!("O");
-                }
             }
         }
         // println!();

@@ -14,7 +14,7 @@ pub fn parse(input: &str) -> &str {
 pub fn part1(input: &str) -> usize {
     let mut lines = input.trim()
         .lines()
-        .map(|line| line.split_once(":").expect("coult not find colon")
+        .map(|line| line.split_once(':').expect("coult not find colon")
             .1
             .split_whitespace()
             .map(|n| n.parse::<usize>().expect("could not parse int"))
@@ -33,9 +33,9 @@ pub fn part1(input: &str) -> usize {
 pub fn part2(input: &str) -> usize {
     let mut lines = input.trim()
         .lines()
-        .map(|line| line.split_once(":").expect("coult not find colon")
+        .map(|line| line.split_once(':').expect("coult not find colon")
             .1
-            .replace(" ", "").parse::<usize>().expect("could not parse digit")
+            .replace(' ', "").parse::<usize>().expect("could not parse digit")
             );
     let time = lines.next().unwrap();
     let distance = lines.next().unwrap();

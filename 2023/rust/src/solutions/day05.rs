@@ -109,7 +109,7 @@ impl<'a> Map<'a> {
     }
 }
 
-fn parse_map<'a>(input: &'a str) -> IResult<&str, Map<'a>> {
+fn parse_map(input: &str) -> IResult<&str, Map<'_>> {
     let (input, (from, to)) = terminated(separated_pair(alphanumeric1, tag("-to-"), alphanumeric1), tuple((tag(" map:"), multispace1)))(input)?;
     let elem = || terminated(unsigned, space0);
     let (rest, ranges) = terminated(separated_list1(newline, tuple((elem(), elem(), elem()))), alt((multispace1, eof)))(input)?;
@@ -148,7 +148,7 @@ impl<'a> Definition<'a> {
 }
 
 
-pub fn parse<'a>(input: &'a str) -> Definition<'a> {
+pub fn parse(input: &str) -> Definition<'_> {
     let (mut input, seeds) = delimited(tag("seeds: "), numbers, multispace1)(input).expect("could not parse seeds");
     let mut maps = vec![];
     let mut previous = "seed";

@@ -38,9 +38,9 @@ fn reconstruct_backwards(series: &TimeSeries) -> isize {
 }
 
 pub fn part1(input: &[TimeSeries]) -> isize {
-    input.iter().map(|s| reconstruct(s)).sum()
+    input.iter().map(reconstruct).sum()
 }
 
 pub fn part2(input: &[TimeSeries]) -> isize {
-    input.iter().map(|s| reconstruct_backwards(s)).sum()
+    input.iter().map(reconstruct_backwards).sum()
 }

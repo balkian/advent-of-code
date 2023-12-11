@@ -64,7 +64,7 @@ pub fn part1(cards: &[Card]) -> usize {
 pub fn part2(cards: &[Card]) -> usize {
     let mut counts = vec![1; cards.len()];
 
-    for (ix, card) in cards.into_iter().enumerate() {
+    for (ix, card) in cards.iter().enumerate() {
         let n_won = card.n_win();
         for other in ((ix + 1)..).take(n_won) {
             counts[other] += counts[ix];

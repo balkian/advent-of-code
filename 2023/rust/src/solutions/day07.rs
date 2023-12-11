@@ -56,7 +56,7 @@ impl<T> From<T> for HandType
 where T: AsRef<[Card]> {
     fn from(cards: T) -> Self {
         //TODO
-        let mut ordered: Vec<Card> = cards.as_ref().iter().copied().collect();
+        let mut ordered: Vec<Card> = cards.as_ref().to_vec();
         ordered.sort();
         // dbg!(&ordered);
         let mut last = ordered.pop().unwrap();
@@ -153,7 +153,7 @@ impl From<&Hand> for JokerHand {
         let cards: Vec<Card> = hand.cards.iter().map(|c| {
             match c {
                 Card::J => Card::Joker,
-                c => c.clone(),
+                c => *c,
             }
             }).collect();
         let mut options = vec![cards.clone()];
@@ -177,7 +177,7 @@ impl From<&Hand> for JokerHand {
         // dbg!(&options);
         let mut options: Vec<HandType> = options.into_iter().map(|c| c.into()).collect();
         options.sort();
-        let hand_type = options.last().expect("no options").clone();
+        let hand_type = *options.last().expect("no options");
         // println!("Best hand type for {:?} is {:?}", hand, hand_type);
         JokerHand{cards, hand_type, bid: hand.bid}
     }

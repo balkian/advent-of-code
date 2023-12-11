@@ -22,7 +22,7 @@ impl Universe {
                     }
                 }).collect()
             ).collect();
-        let galaxies = grid.iter().enumerate().flat_map(|(ix, row)| row.iter().enumerate().filter_map(move |(jx, cell)| cell.then(|| [ix, jx]))).collect();
+        let galaxies = grid.iter().enumerate().flat_map(|(ix, row)| row.iter().enumerate().filter(|(_, cell)| **cell).map(move |(jx, _)| [ix, jx])).collect();
         let mut empty_rows = vec![];
         let mut empty_cols = vec![];
         //begin expansion 

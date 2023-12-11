@@ -22,7 +22,7 @@ fn first_number(
             return None;
         }
     }
-    return None;
+    None
 }
 
 pub fn solve(input: &str, patterns: &[&str]) -> usize {
