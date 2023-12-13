@@ -110,7 +110,7 @@ pub fn part2(rows: &[Row]) -> usize {
         .map(|(_ix, row)| {
             // dbg!(ix);
             let mut springs: Vec<Spring> = row.springs[1..][..row.springs.len() - 2]
-                .into_iter()
+                .iter()
                 .cloned()
                 .chain(once(Spring::Unknown))
                 .cycle()
