@@ -59,35 +59,40 @@ impl fmt::Debug for Map {
 
 impl Map {
     fn tilt(&self, dir: Direction) -> Map {
-        let mut grid = self.0.clone();
+        let mut grid: Vec<Vec<_>> = self
+            .0
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|r| match r {
+                        Rock::Round => Rock::Empty,
+                        r => *r,
+                    })
+                    .collect()
+            })
+            .collect();
         if grid.is_empty() {
             return Map(grid);
         }
-        grid.iter_mut()
-            .flat_map(|row| row.iter_mut())
-            .for_each(|t| {
-                if t == &Rock::Round {
-                    *t = Rock::Empty;
-                }
-            });
 
         let y_size = self.0.len();
         let x_size = self.0[y_size - 1].len();
 
         // Calculate the order of travel based on direction
-        let outer: Vec<Vec<(usize, usize)>> = match dir {
-            Direction::Up => (0..x_size)
-                .map(|x| (0..y_size).rev().map(|y| (y, x)).collect())
-                .collect(),
-            Direction::Down => (0..x_size)
-                .map(|x| (0..y_size).map(|y| (y, x)).collect())
-                .collect(),
-            Direction::Left => (0..y_size)
-                .map(|y| (0..x_size).rev().map(|x| (y, x)).collect())
-                .collect(),
-            Direction::Right => (0..y_size)
-                .map(|y| (0..x_size).map(|x| (y, x)).collect())
-                .collect(),
+        type CoordMapper = dyn Fn(usize) -> Vec<(usize, usize)>;
+        let outer: std::iter::Map<_, Box<CoordMapper>> = match dir {
+            Direction::Up => (0..x_size).map(Box::new(move |x| {
+                (0..y_size).rev().map(|y| (y, x)).collect()
+            })),
+            Direction::Down => {
+                (0..x_size).map(Box::new(move |x| (0..y_size).map(|y| (y, x)).collect()))
+            }
+            Direction::Left => (0..y_size).map(Box::new(move |y| {
+                (0..x_size).rev().map(|x| (y, x)).collect()
+            })),
+            Direction::Right => {
+                (0..y_size).map(Box::new(move |y| (0..x_size).map(|x| (y, x)).collect()))
+            }
         };
 
         for it in outer {
