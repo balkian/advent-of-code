@@ -1,26 +1,24 @@
-use nom::{                                                        
+use nom::{
     branch::alt,
-    bytes::complete::tag,                                         
-    character::complete::{alphanumeric1, digit1, multispace1, newline, space0, space1},   
-    combinator::{eof, map_res, recognize},                             
-    multi::{separated_list1},                                     
-    sequence::{delimited, terminated, separated_pair, tuple},                 
-    IResult,                                                      
-};                                                                
+    bytes::complete::tag,
+    character::complete::{alphanumeric1, digit1, multispace1, newline, space0, space1},
+    combinator::{eof, map_res, recognize},
+    multi::separated_list1,
+    sequence::{delimited, separated_pair, terminated, tuple},
+    IResult,
+};
 
-use std::ops::Range;
 use std::cmp::min;
 use std::cmp::Ordering;
+use std::ops::Range;
 
-                                                                  
+fn unsigned(input: &str) -> IResult<&str, usize> {
+    map_res(recognize(digit1), str::parse)(input)
+}
 
-fn unsigned(input: &str) -> IResult<&str, usize> {                      
-    map_res(recognize(digit1), str::parse)(input)                       
-}                                                                       
-                                                                        
-fn numbers(input: &str) -> IResult<&str, Vec<usize>> {                  
-    delimited(space0, separated_list1(space1, unsigned), space0)(input) 
-}                                                                       
+fn numbers(input: &str) -> IResult<&str, Vec<usize>> {
+    delimited(space0, separated_list1(space1, unsigned), space0)(input)
+}
 
 #[derive(Debug, PartialEq, Eq)]
 struct Transformation {
@@ -62,7 +60,6 @@ impl<'a> Map<'a> {
                 transform.range.start.cmp(&key)
             }
         })
-        
     }
     fn get(&self, key: usize) -> usize {
         if let Ok(ix) = self.get_transform(key) {
@@ -80,7 +77,7 @@ impl<'a> Map<'a> {
             Ok(idx) => idx,
             Err(idx) => idx,
         };
-        
+
         for idx in idx..self.ranges.len() {
             if range.is_empty() {
                 break;
@@ -93,11 +90,11 @@ impl<'a> Map<'a> {
                 if range.is_empty() {
                     break;
                 }
-            } 
-                let start = range.start;
-                let end = min(range.end, transform.range.end);
-                chunks.push(transform.get(start)..transform.get(end));
-                range = end..range.end;
+            }
+            let start = range.start;
+            let end = min(range.end, transform.range.end);
+            chunks.push(transform.get(start)..transform.get(end));
+            range = end..range.end;
         }
 
         if !range.is_empty() {
@@ -110,13 +107,25 @@ impl<'a> Map<'a> {
 }
 
 fn parse_map(input: &str) -> IResult<&str, Map<'_>> {
-    let (input, (from, to)) = terminated(separated_pair(alphanumeric1, tag("-to-"), alphanumeric1), tuple((tag(" map:"), multispace1)))(input)?;
+    let (input, (from, to)) = terminated(
+        separated_pair(alphanumeric1, tag("-to-"), alphanumeric1),
+        tuple((tag(" map:"), multispace1)),
+    )(input)?;
     let elem = || terminated(unsigned, space0);
-    let (rest, ranges) = terminated(separated_list1(newline, tuple((elem(), elem(), elem()))), alt((multispace1, eof)))(input)?;
-    let mut ranges: Vec<Transformation> = ranges.into_iter().map(|(to, from, size)| Transformation{range: from..(from+size), offset: (to as isize - from as isize)}).collect();
+    let (rest, ranges) = terminated(
+        separated_list1(newline, tuple((elem(), elem(), elem()))),
+        alt((multispace1, eof)),
+    )(input)?;
+    let mut ranges: Vec<Transformation> = ranges
+        .into_iter()
+        .map(|(to, from, size)| Transformation {
+            range: from..(from + size),
+            offset: (to as isize - from as isize),
+        })
+        .collect();
     ranges.sort();
 
-    Ok((rest, Map{from, to, ranges}))
+    Ok((rest, Map { from, to, ranges }))
 }
 
 #[derive(Debug)]
@@ -133,23 +142,37 @@ impl<'a> Definition<'a> {
     }
 
     fn lowest_location(&self) -> usize {
-        self.0.iter().copied().map(|seed| {
-            self.get(seed)
-        }).min().unwrap()
+        self.0
+            .iter()
+            .copied()
+            .map(|seed| self.get(seed))
+            .min()
+            .unwrap()
     }
 
     fn lowest_location2(&self) -> usize {
-        let mut ranges: Vec<Range<usize>> = self.0.chunks(2).map(|chunk| chunk[0]..(chunk[0]+chunk[1])).collect();
+        let mut ranges: Vec<Range<usize>> = self
+            .0
+            .chunks(2)
+            .map(|chunk| chunk[0]..(chunk[0] + chunk[1]))
+            .collect();
         for map in &self.1 {
-            ranges = ranges.into_iter().flat_map(|range| map.get_ranges(range)).collect();
+            ranges = ranges
+                .into_iter()
+                .flat_map(|range| map.get_ranges(range))
+                .collect();
         }
-        ranges.into_iter().map(|range| range.start).min().expect("no minimum found")
+        ranges
+            .into_iter()
+            .map(|range| range.start)
+            .min()
+            .expect("no minimum found")
     }
 }
 
-
 pub fn parse(input: &str) -> Definition<'_> {
-    let (mut input, seeds) = delimited(tag("seeds: "), numbers, multispace1)(input).expect("could not parse seeds");
+    let (mut input, seeds) =
+        delimited(tag("seeds: "), numbers, multispace1)(input).expect("could not parse seeds");
     let mut maps = vec![];
     let mut previous = "seed";
     while let Ok((rest, map)) = parse_map(input) {

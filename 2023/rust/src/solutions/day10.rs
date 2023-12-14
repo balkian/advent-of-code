@@ -108,11 +108,8 @@ impl<'a> Map<'a> {
                 let previous = paths[ix].last().expect("empty path");
                 if let Some(next_head) = d.iter().position(|c| c == previous).and_then(|prev| {
                     d.remove(prev);
-                    d.pop().and_then(
-                        |next_head| {
-                            d.is_empty().then_some(next_head)
-                        },
-                    )
+                    d.pop()
+                        .and_then(|next_head| d.is_empty().then_some(next_head))
                 }) {
                     let old_head = mem::replace(&mut heads[ix], next_head);
                     paths[ix].push(old_head);
@@ -139,15 +136,13 @@ pub fn part1(map: &Map) -> usize {
 }
 pub fn part2(map: &Map) -> usize {
     let path = map.find_loop();
-    let prev = *path
-        .last()
-        .expect("loop is too small (<2 elements)");
+    let prev = *path.last().expect("loop is too small (<2 elements)");
     let next = path[1];
     // HashSet is around 2x as fast in this specific case
     let path: HashSet<Coord> = path.into_iter().collect();
     let mut inside = 0;
 
-    // S should count as a boundary if it can be replaced by |, L or J. i.e., 
+    // S should count as a boundary if it can be replaced by |, L or J. i.e.,
     // if the path includes a pipe to the north of the start.
     let include_s = [prev, next].contains(&[map.start[0].saturating_sub(1), map.start[1]]);
 
@@ -165,11 +160,11 @@ pub fn part2(map: &Map) -> usize {
                     }
                     _ => {}
                 }
-            } else  if crossings % 2 != 0 {
-                    inside += 1;
-                    // print!("I");
-            // } else {
-                    // print!("O");
+            } else if crossings % 2 != 0 {
+                inside += 1;
+                // print!("I");
+                // } else {
+                // print!("O");
             }
         }
         // println!();

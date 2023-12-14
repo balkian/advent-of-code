@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Game<'a> {
     directions: Vec<usize>,
     jumps: HashMap<&'a str, [&'a str; 2]>,
@@ -8,23 +8,28 @@ pub struct Game<'a> {
 
 pub fn parse(input: &str) -> Game<'_> {
     let mut lines = input.lines();
-    let directions = lines.next().expect("less than one line").chars().map(|c| {
-        match c{
-        'L' => 0,
-        'R' => 1,
-        c => panic!("unknown direction {c}"),
-            }
-    } ).collect();
+    let directions = lines
+        .next()
+        .expect("less than one line")
+        .chars()
+        .map(|c| match c {
+            'L' => 0,
+            'R' => 1,
+            c => panic!("unknown direction {c}"),
+        })
+        .collect();
     let mut jumps = HashMap::new();
     lines.next().expect("no empty line after directions");
     for line in lines {
         let (name, sides) = line.split_once(" = ").expect("did not find equal");
-        let sides = sides.trim_matches(&['(', ')'] as &[_]).split_once(", ").expect("did not find comma");
+        let sides = sides
+            .trim_matches(&['(', ')'] as &[_])
+            .split_once(", ")
+            .expect("did not find comma");
         jumps.insert(name, [sides.0, sides.1]);
     }
 
-    Game{directions, jumps}
-    
+    Game { directions, jumps }
 }
 
 pub fn part1(game: &Game) -> usize {
@@ -33,7 +38,7 @@ pub fn part1(game: &Game) -> usize {
     let mut directions = game.directions.iter().cycle();
     for i in 0.. {
         if current == "ZZZ" {
-            return i
+            return i;
         }
         let d = directions.next().unwrap();
         current = jumps.get(current).expect("current not found {current}")[*d];
@@ -41,7 +46,12 @@ pub fn part1(game: &Game) -> usize {
     unreachable!();
 }
 pub fn part2(game: &Game) -> usize {
-    let mut current: Vec<&str>  = game.jumps.keys().filter(|k| k.ends_with('A')).copied().collect();
+    let mut current: Vec<&str> = game
+        .jumps
+        .keys()
+        .filter(|k| k.ends_with('A'))
+        .copied()
+        .collect();
     // dbg!(current.len());
     let jumps = &game.jumps;
     let mut cycles = vec![0; current.len()];
@@ -62,7 +72,7 @@ pub fn part2(game: &Game) -> usize {
             }
         }
         if done {
-            break
+            break;
         }
     }
     // dbg!(&cycles, game.directions.len());
@@ -87,4 +97,4 @@ fn gcd(first: usize, second: usize) -> usize {
         }
         std::mem::swap(&mut max, &mut min);
     }
-}					
+}

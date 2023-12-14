@@ -2,7 +2,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::{digit1, multispace1, space0, space1},
     combinator::{map_res, recognize},
-    multi::{separated_list1},
+    multi::separated_list1,
     sequence::{delimited, separated_pair, tuple},
     IResult,
 };

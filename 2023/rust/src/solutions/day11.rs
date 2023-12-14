@@ -1,6 +1,6 @@
 type Coord = [usize; 2];
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Universe {
     // grid: Vec<Vec<bool>>,
     galaxies: Vec<Coord>,
@@ -12,20 +12,30 @@ impl Universe {
     fn new(input: &str) -> Self {
         let grid: Vec<Vec<_>> = input
             .lines()
-            .filter(|line| !line
-            .is_empty())
-            .map(|line| line.chars().map(|c| {
-                    match c { 
+            .filter(|line| !line.is_empty())
+            .map(|line| {
+                line.chars()
+                    .map(|c| match c {
                         '#' => true,
                         '.' => false,
-                        c => panic!("unknown character {c}")
-                    }
-                }).collect()
-            ).collect();
-        let galaxies = grid.iter().enumerate().flat_map(|(ix, row)| row.iter().enumerate().filter(|(_, cell)| **cell).map(move |(jx, _)| [ix, jx])).collect();
+                        c => panic!("unknown character {c}"),
+                    })
+                    .collect()
+            })
+            .collect();
+        let galaxies = grid
+            .iter()
+            .enumerate()
+            .flat_map(|(ix, row)| {
+                row.iter()
+                    .enumerate()
+                    .filter(|(_, cell)| **cell)
+                    .map(move |(jx, _)| [ix, jx])
+            })
+            .collect();
         let mut empty_rows = vec![];
         let mut empty_cols = vec![];
-        //begin expansion 
+        //begin expansion
         if grid.is_empty() {
             panic!("Empty galaxy input");
         }
@@ -48,7 +58,11 @@ impl Universe {
                 empty_cols.push(jx);
             }
         }
-        Universe{galaxies, empty_rows, empty_cols}
+        Universe {
+            galaxies,
+            empty_rows,
+            empty_cols,
+        }
     }
 
     fn distances(&self, age: usize) -> usize {
@@ -97,5 +111,5 @@ pub fn part1(universe: &Universe) -> usize {
 }
 
 pub fn part2(universe: &Universe) -> usize {
-    universe.distances(1000000-1)
+    universe.distances(1000000 - 1)
 }

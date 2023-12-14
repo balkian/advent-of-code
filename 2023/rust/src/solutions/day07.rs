@@ -20,8 +20,8 @@ enum Card {
 
 impl TryFrom<char> for Card {
     type Error = String;
-    fn try_from(c: char) -> Result<Card, Self::Error>  {
-        match c{
+    fn try_from(c: char) -> Result<Card, Self::Error> {
+        match c {
             'A' => Ok(Card::A),
             'K' => Ok(Card::K),
             'Q' => Ok(Card::Q),
@@ -35,13 +35,12 @@ impl TryFrom<char> for Card {
             '4' => Ok(Card::N4),
             '3' => Ok(Card::N3),
             '2' => Ok(Card::N2),
-            c => Err(format!("unknown card {c}"))
+            c => Err(format!("unknown card {c}")),
         }
     }
 }
 
-
-#[derive(Debug,Clone,Copy, PartialEq,Eq,PartialOrd,Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum HandType {
     HighCard,
     OnePair,
@@ -53,7 +52,9 @@ enum HandType {
 }
 
 impl<T> From<T> for HandType
-where T: AsRef<[Card]> {
+where
+    T: AsRef<[Card]>,
+{
     fn from(cards: T) -> Self {
         //TODO
         let mut ordered: Vec<Card> = cards.as_ref().to_vec();
@@ -62,18 +63,18 @@ where T: AsRef<[Card]> {
         let mut last = ordered.pop().unwrap();
         let mut count = 1;
         let mut counts: [usize; 5] = [0; 5];
-        
+
         while let Some(card) = ordered.pop() {
             if card == last {
                 count += 1;
             } else {
-                counts[count-1] += 1;
+                counts[count - 1] += 1;
                 last = card;
                 count = 1;
             }
         }
         if count > 0 {
-            counts[count-1] += 1;
+            counts[count - 1] += 1;
         }
         match counts {
             [0, 0, 0, 0, 1] => Self::FiveOfAKind,
@@ -83,7 +84,7 @@ where T: AsRef<[Card]> {
             [1, 2, 0, 0, 0] => Self::TwoPair,
             [3, 1, 0, 0, 0] => Self::OnePair,
             [5, 0, 0, 0, 0] => Self::HighCard,
-            _ => panic!("unknown hand {counts:?} {:?}", cards.as_ref())
+            _ => panic!("unknown hand {counts:?} {:?}", cards.as_ref()),
         }
     }
 }
@@ -105,15 +106,20 @@ impl Eq for Hand {}
 
 impl Hand {
     fn new(input: &str, bid: usize) -> Self {
-        let cards: Vec<Card> = input.chars().map(|c| Card::try_from(c).expect("invalid card {c}")).collect();
+        let cards: Vec<Card> = input
+            .chars()
+            .map(|c| Card::try_from(c).expect("invalid card {c}"))
+            .collect();
         let hand_type = (&cards).into();
-        Hand{cards, hand_type, bid}
+        Hand {
+            cards,
+            hand_type,
+            bid,
+        }
     }
 }
 
-
-
-impl PartialOrd for Hand{
+impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
@@ -121,13 +127,13 @@ impl PartialOrd for Hand{
 
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.hand_type.cmp(&other.hand_type).then_with(||
-            other.cards.cmp(&self.cards)
-        )
+        self.hand_type
+            .cmp(&other.hand_type)
+            .then_with(|| other.cards.cmp(&self.cards))
     }
 }
 
-#[derive(Debug,Clone,PartialEq,Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct JokerHand {
     cards: Vec<Card>,
     hand_type: HandType,
@@ -142,23 +148,25 @@ impl PartialOrd for JokerHand {
 
 impl Ord for JokerHand {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.hand_type.cmp(&other.hand_type).then_with(||
-            other.cards.cmp(&self.cards)
-        )
+        self.hand_type
+            .cmp(&other.hand_type)
+            .then_with(|| other.cards.cmp(&self.cards))
     }
 }
 
 impl From<&Hand> for JokerHand {
     fn from(hand: &Hand) -> Self {
-        let cards: Vec<Card> = hand.cards.iter().map(|c| {
-            match c {
+        let cards: Vec<Card> = hand
+            .cards
+            .iter()
+            .map(|c| match c {
                 Card::J => Card::Joker,
                 c => *c,
-            }
-            }).collect();
+            })
+            .collect();
         let mut options = vec![cards.clone()];
         use Card::*;
-        let values: [Card; 12] = [ A, K, Q, T, N9, N8, N7, N6, N5, N4, N3, N2];
+        let values: [Card; 12] = [A, K, Q, T, N9, N8, N7, N6, N5, N4, N3, N2];
         for ix in 0..5 {
             let mut jx = 0;
             while jx < options.len() {
@@ -179,33 +187,43 @@ impl From<&Hand> for JokerHand {
         options.sort();
         let hand_type = *options.last().expect("no options");
         // println!("Best hand type for {:?} is {:?}", hand, hand_type);
-        JokerHand{cards, hand_type, bid: hand.bid}
+        JokerHand {
+            cards,
+            hand_type,
+            bid: hand.bid,
+        }
     }
 }
 
 pub fn parse(input: &str) -> Vec<Hand> {
-    let mut hands: Vec<_> = input.lines()
+    let mut hands: Vec<_> = input
+        .lines()
         .filter(|line| !line.is_empty())
         .map(|line| {
             let (cards, bid) = line.split_once(' ').expect("could not split in two");
             let bid = bid.parse::<usize>().expect("invalid bid {bid}");
             Hand::new(cards, bid)
-        }).collect();
+        })
+        .collect();
     hands.sort();
     hands
 }
 
 pub fn part1(hands: &[Hand]) -> usize {
     // dbg!(&hands);
-    hands.iter().enumerate().map(|(ix, hand)| {
-        (ix+1) * hand.bid
-    }).sum()
+    hands
+        .iter()
+        .enumerate()
+        .map(|(ix, hand)| (ix + 1) * hand.bid)
+        .sum()
 }
 
 pub fn part2(hands: &[Hand]) -> usize {
     let mut hands: Vec<JokerHand> = hands.iter().map(|h| h.into()).collect();
     hands.sort();
-    hands.iter().enumerate().map(|(ix, hand)| {
-        (ix+1) * hand.bid
-    }).sum()
+    hands
+        .iter()
+        .enumerate()
+        .map(|(ix, hand)| (ix + 1) * hand.bid)
+        .sum()
 }
