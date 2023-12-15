@@ -9,7 +9,8 @@ pub fn main() {
     let dest_path = Path::new("src").join("main.rs");
     let mut f = File::create(&dest_path).unwrap();
     f.write_all(b"mod solutions;\n\n").unwrap();
-    f.write_all(b"fn main() {\n    solutions::main();\n}\n").unwrap();
+    f.write_all(b"fn main() {\n    solutions::main();\n}\n")
+        .unwrap();
 
     let dest_path = Path::new("src").join("solutions.rs");
     let mut f = File::create(&dest_path).unwrap();

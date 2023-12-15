@@ -7,8 +7,7 @@ use std::io;
 use std::path::PathBuf;
 pub extern crate clap;
 
-pub fn section<T>(timeit: bool, title: &str, code: impl FnOnce() -> T) -> T
-{
+pub fn section<T>(timeit: bool, title: &str, code: impl FnOnce() -> T) -> T {
     print!("{} ", title);
     let now = std::time::Instant::now();
     let res = code();
@@ -77,25 +76,23 @@ macro_rules! solve_1 {
         let def_file = i_f.to_str().unwrap();
 
         let fname = $input.unwrap_or(def_file);
-        println!("* Running {} {}", stringify!($day), $year.map(|y| y.to_string()).unwrap_or(String::new()));
+        println!(
+            "* Running {} {}",
+            stringify!($day),
+            $year.map(|y| y.to_string()).unwrap_or(String::new())
+        );
 
         let input = &std::fs::read_to_string(fname).expect("could not read input file");
-        let input = &$crate::section($timeit, "\tParsing...", || {$day::parse(input)});
+        let input = &$crate::section($timeit, "\tParsing...", || $day::parse(input));
         //let input = &$day::parse(input);
 
         let parts = match $args
             .value_of("part")
             .expect("the part argument should have a default value")
         {
-            "1" | "a" => {
-                (true, false)
-            }
-            "2" | "b" => {
-                (false, true)
-            }
-            "all" => {
-                (true, true)
-            }
+            "1" | "a" => (true, false),
+            "2" | "b" => (false, true),
+            "all" => (true, true),
             _ => panic!("Unknown parameter"),
         };
         if parts.0 {
