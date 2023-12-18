@@ -1,6 +1,7 @@
+use std::collections::HashMap;
 use std::iter::once;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Spring {
     Operational,
     Damaged,
@@ -43,9 +44,22 @@ fn index_by_windows(springs: &[Spring], size: usize) -> impl Iterator<Item = usi
         })
         .map(move |(idx, _)| idx)
 }
-
 fn resolve(springs: &[Spring], damaged: &[usize]) -> usize {
-    if damaged.is_empty() {
+    let mut memo = HashMap::<(&[Spring], &[usize]), usize>::new();
+    let mut reused = 0;
+    let res = resolve_memoized(springs, damaged, &mut memo, &mut reused);
+    // dbg!(&memo.len(), reused);
+    res
+}
+fn resolve_memoized<'b, 'c>(springs: &'b[Spring], damaged: &'b[usize],
+     memo: &mut HashMap<(&'b [Spring], &'b [usize]), usize>,
+    counter: &mut usize
+) -> usize {
+    if let Some(sol) = memo.get(&(springs, damaged)) {
+        *counter += 1;
+        return *sol;
+    }
+    let sol = if damaged.is_empty() {
         if springs.iter().all(|s| s.is_operational()) {
             1
         } else {
@@ -58,13 +72,15 @@ fn resolve(springs: &[Spring], damaged: &[usize]) -> usize {
         let g2 = &g2[1..]; // remove idx_max group
         let mut total = 0;
         for (head, tail) in split_by_windows(springs, max) {
-            let r = resolve(head, g1);
+            let r = resolve_memoized(head, g1, memo, counter);
             if r > 0 {
-                total += r * resolve(tail, g2);
+                total += r * resolve_memoized(tail, g2, memo, counter);
             }
         }
         total
-    }
+    };
+    memo.insert((springs, damaged), sol);
+    sol
 }
 
 fn surround(springs: &mut Vec<Spring>) {
