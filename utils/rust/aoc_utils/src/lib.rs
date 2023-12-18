@@ -182,8 +182,12 @@ macro_rules! aoc_sample {
 #[macro_export]
 macro_rules! example {
     ($fname:literal) => {
-        parse(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../examples/", $fname)))
-    }
+        parse(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../examples/",
+            $fname
+        )))
+    };
 }
 
 /// Drop-in replacement for dbg that only prints in debug mode (not in release)

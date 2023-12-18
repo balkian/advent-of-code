@@ -1,4 +1,4 @@
-use aoc_utils::*;
+
 use std::collections::HashMap;
 
 pub fn parse(input: &str) -> Vec<&str> {

@@ -1,6 +1,6 @@
-use core::cmp::{min, max};
-use itertools::Itertools;
-use core::ops::Range;
+
+
+
 
 #[derive(Debug,Clone,Copy,PartialEq,Eq)]
 enum Direction {
@@ -62,16 +62,16 @@ pub fn solve_vertices(instructions: &[Instruction]) -> usize {
     for instruction in instructions {
         match instruction.direction {
             Direction::Up => {
-                y -= (instruction.count as isize);
+                y -= instruction.count as isize;
             },
             Direction::Down => {
-                y += (instruction.count as isize);
+                y += instruction.count as isize;
             },
             Direction::Right => {
-                x += (instruction.count as isize);
+                x += instruction.count as isize;
             },
             Direction::Left => {
-                x -= (instruction.count as isize);
+                x -= instruction.count as isize;
             }
         };
         perimeter += instruction.count;
