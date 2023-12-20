@@ -1,8 +1,8 @@
 pub use clap::{arg, value_parser, Arg, ArgAction, Command};
 use reqwest::blocking::Client;
+use std::cmp::{max, min};
 pub use std::env;
 use std::fs::{read_to_string, File};
-use std::cmp::{max, min};
 
 use std::io;
 use std::path::PathBuf;

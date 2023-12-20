@@ -10,8 +10,7 @@ use nom::{
     sequence::{separated_pair}
 };
 
-use std::cmp::{max, min};
-use std::{borrow::{Borrow,BorrowMut}};
+
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -104,7 +103,7 @@ impl<'a> Circuit<'a> {
             if let Some(pulse) = pulse {
                 if let Some(outs) = self.outputs.get_mut(name) {
                     for out in outs {
-                        pulses.push_back((name, *out, pulse.clone()));
+                        pulses.push_back((name, *out, pulse));
                     }
                 }
             }
@@ -131,8 +130,8 @@ fn line(input: &str) -> IResult<&str, (&str, Gate, Vec<&str>)> {
     Ok((input, (gname, gate, outputs)))
 }
 
-pub fn parse<'a>(input: &'a str) -> Circuit<'a> {
-    let mut input = input.trim();
+pub fn parse(input: &str) -> Circuit<'_> {
+    let input = input.trim();
     let (_rest, lines) = separated_list1(newline, line)(input).expect("empty description");
     let mut gates : BTreeMap<_, _> = Default::default();
     let mut outputs: BTreeMap<_, Vec<_>> = Default::default();
@@ -175,7 +174,7 @@ pub fn part2(input: &Circuit<'_>) -> usize{
         match adjacent.len() {
             0 => panic!("no dependencies found"),
             1 => {target = adjacent.pop().unwrap();},
-            a => {break adjacent;},
+            _a => {break adjacent;},
         }
     };
 
@@ -202,7 +201,7 @@ pub fn part2(input: &Circuit<'_>) -> usize{
             break;
         }
     }
-    cycles.into_iter().fold(1, |acc, x| lcm(acc, x))
+    cycles.into_iter().fold(1, lcm)
 
 
     // As an alternative:
