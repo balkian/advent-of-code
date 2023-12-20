@@ -2,6 +2,7 @@ pub use clap::{arg, value_parser, Arg, ArgAction, Command};
 use reqwest::blocking::Client;
 pub use std::env;
 use std::fs::{read_to_string, File};
+use std::cmp::{max, min};
 
 use std::io;
 use std::path::PathBuf;
@@ -59,6 +60,24 @@ pub fn download_day(day: &str, year: Option<usize>, fpath: &PathBuf) {
     let body = resp.text().expect("body invalid");
     let mut out = File::create(fpath).expect("failed to create file");
     io::copy(&mut body.as_bytes(), &mut out).expect("failed to copy content");
+}
+
+pub fn gcd(a: usize, b: usize) -> usize {
+    match ((a, b), (a & 1, b & 1)) {
+        ((x, y), _) if x == y => y,
+        ((0, x), _) | ((x, 0), _) => x,
+        ((x, y), (0, 1)) | ((y, x), (1, 0)) => gcd(x >> 1, y),
+        ((x, y), (0, 0)) => gcd(x >> 1, y >> 1) << 1,
+        ((x, y), (1, 1)) => {
+            let (x, y) = (min(x, y), max(x, y));
+            gcd((y - x) >> 1, x)
+        }
+        _ => unreachable!(),
+    }
+}
+
+pub fn lcm(a: usize, b: usize) -> usize {
+    a * b / gcd(a, b)
 }
 
 #[macro_export]
