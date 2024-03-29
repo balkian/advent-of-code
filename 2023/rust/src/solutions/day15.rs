@@ -68,6 +68,7 @@ pub fn part2(steps: &[&str]) -> usize {
 
 #[cfg(test)]
 mod test {
+    use aoc_utils::*;
     use super::*;
     #[test]
     fn test_example1() {

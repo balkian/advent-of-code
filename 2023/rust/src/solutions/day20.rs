@@ -218,4 +218,3 @@ pub fn part2(input: &Circuit<'_>) -> usize{
     // The graph shows 4 distinct structures that 
     // 243221023462303
 }
-
