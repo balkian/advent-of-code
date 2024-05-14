@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Point {
@@ -11,6 +11,7 @@ pub struct Point {
 pub struct Brick {
     points: BTreeMap<(usize, usize), Vec<usize>>,
     bottom: usize,
+    top: usize,
 }
 
 impl Brick {
@@ -30,11 +31,16 @@ impl Brick {
                 }
             }
         }
-        Brick { points, bottom: z0 }
+        Brick {
+            points,
+            bottom: z0,
+            top: z1,
+        }
     }
 
     fn fall(&mut self, height: usize) {
         self.bottom -= height;
+        self.top -= height;
         for v in self.points.values_mut() {
             for z in v.iter_mut() {
                 *z -= height;
@@ -64,58 +70,55 @@ impl Brick {
 #[derive(Debug, Clone)]
 pub struct Problem {
     bricks: Vec<Brick>,
-    disintegrated: BTreeSet<usize>,
-    dependencies: HashMap<usize, HashSet<usize>>,
+    dependencies: BTreeMap<usize, BTreeSet<usize>>,
 }
 
 impl Problem {
     fn new(bricks: &[Brick]) -> Self {
-        let disintegrated = BTreeSet::new();
         let mut bricks: Vec<_> = bricks.into();
-        bricks.sort_by(|a, b| a.bottom.cmp(&b.bottom));
-        let mut s = Self {
-            bricks,
-            disintegrated,
-            dependencies: Default::default(),
-        };
-        for i in 0..s.bricks.len() {
-            s.settle_brick(i);
-        }
-
-        for (ix, bi) in s.bricks.iter().enumerate() {
-            for (jx, bj) in s.bricks.iter().enumerate() {
+        bricks.sort_by(|a, b| a.top.cmp(&b.top));
+        let bricks = bricks.into_iter().fold(vec![], |mut acc, b| {
+            let b = make_fall(&b, &acc);
+            let pos = acc
+                .binary_search_by_key(&b.top, |b| b.top)
+                .unwrap_or_else(|e| e);
+            acc.insert(pos, b);
+            acc
+        });
+        let mut dependencies: BTreeMap<usize, BTreeSet<usize>> = Default::default();
+        for (ix, bi) in bricks.iter().enumerate() {
+            for (jx, bj) in bricks.iter().enumerate() {
                 if ix == jx {
                     continue;
                 }
                 if bi.distance(bj) == Some(0) {
-                    s.dependencies.entry(ix).or_default().insert(jx);
+                    dependencies.entry(ix).or_default().insert(jx);
                 }
             }
         }
-        s
-    }
-
-    fn settle_brick(&mut self, pos: usize) -> usize {
-        let h = self.brick_height(pos);
-        self.bricks[pos].fall(h);
-        h
-    }
-
-    fn brick_height(&self, pos: usize) -> usize {
-        let brick = &self.bricks[pos];
-        let mut max_drop = brick.z() - 1;
-
-        for ox in 0..pos {
-            if self.disintegrated.contains(&ox) || ox == pos {
-                continue;
-            }
-            let other = &self.bricks[ox];
-            if let Some(thisdrop) = brick.distance(other) {
-                max_drop = max_drop.min(thisdrop);
-            }
+        Self {
+            bricks,
+            dependencies,
         }
-        max_drop
     }
+}
+
+fn make_fall(brick: &Brick, fallen: &[Brick]) -> Brick {
+    let mut max_drop: Option<usize> = None;
+
+    for other in fallen.iter().rev() {
+        if let Some(thisdrop) = brick.distance(other) {
+            if let Some(m) = max_drop {
+                max_drop = Some(m.min(thisdrop));
+            } else {
+                max_drop = Some(thisdrop);
+            }
+            break;
+        }
+    }
+    let mut result = brick.clone();
+    result.fall(max_drop.unwrap_or_else(|| brick.z() - 1));
+    result
 }
 
 pub fn parse(input: &str) -> Problem {
@@ -165,7 +168,7 @@ pub fn part2(problem: &Problem) -> usize {
     let mut fallen = 0;
     let dependencies = &problem.dependencies;
     for i in 0..problem.bricks.len() {
-        let mut falling: HashSet<usize> = Default::default();
+        let mut falling: BTreeSet<usize> = Default::default();
         falling.insert(i);
         for j in i + 1..problem.bricks.len() {
             if let Some(deps) = dependencies.get(&j) {
