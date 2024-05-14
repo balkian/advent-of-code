@@ -50,7 +50,7 @@ impl fmt::Display for Map {
                     write!(f, "{}", self.repr[y][x] as char)?;
                 }
             }
-            writeln!(f, "")?;
+            writeln!(f)?;
         }
         Ok(())
     }
@@ -65,7 +65,7 @@ impl fmt::Debug for Map {
 
 pub fn parse(repr: &str) -> Map {
     let mut occupied = HashSet::new();
-    let mut repr: Vec<Vec<u8>> = repr.split("\n").filter(|row| !row.is_empty()).map(|row| Vec::from(row.trim())).collect();
+    let mut repr: Vec<Vec<u8>> = repr.split('\n').filter(|row| !row.is_empty()).map(|row| Vec::from(row.trim())).collect();
     for (y, row) in repr.iter_mut().enumerate() {
         for (x, i) in row.iter_mut().enumerate() {
             match i {
@@ -129,9 +129,9 @@ pub fn solve(map: &Map, steps: usize) -> usize {
             let x1 = mid;
             let x2 = x1 + map.repr.len();
             let x3 = threshold;
-            let y1 = values[x1 as usize] as f64;
-            let y2 = values[x2 as usize] as f64;
-            let y3 = values[x3 as usize] as f64;
+            let y1 = values[x1] as f64;
+            let y2 = values[x2] as f64;
+            let y3 = values[x3] as f64;
             let x1 = 1f64;
             let x2 = 2f64;
             let x3 = 3f64;
@@ -144,7 +144,7 @@ pub fn solve(map: &Map, steps: usize) -> usize {
             return (a * (x4 * x4) + b * x4 + c) as usize;
         }
     }
-    values.last().unwrap().clone()
+    *values.last().unwrap()
 }
 
 pub fn part1(map: &Map) -> usize {

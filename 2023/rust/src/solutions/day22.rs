@@ -71,7 +71,7 @@ impl Problem {
         let disintegrated = BTreeSet::new();
         let mut bricks: Vec<_> = bricks.into();
         bricks.sort_by(|a, b| a.bottom.cmp(&b.bottom));
-        let mut s = Self{bricks: bricks, disintegrated, dependencies: Default::default()};
+        let mut s = Self{bricks, disintegrated, dependencies: Default::default()};
         for i in 0..s.bricks.len() {
             s.settle_brick(i);
         }
@@ -96,7 +96,6 @@ impl Problem {
     }
 
     fn brick_height(&self, pos: usize) -> usize {
-        // For every other shadow position of this brick
         let brick = &self.bricks[pos];
         let mut max_drop = brick.z() - 1;
 
@@ -105,8 +104,7 @@ impl Problem {
                 continue;
             }
             let other = &self.bricks[ox];
-            // For every overlap
-            if let Some(thisdrop) = brick.distance(&other) {
+            if let Some(thisdrop) = brick.distance(other) {
                 max_drop = max_drop.min(thisdrop);
             }
         }
@@ -118,8 +116,8 @@ impl Problem {
 pub fn parse(input: &str) -> Problem {
     let bricks: Vec<Brick> = input.trim().lines().filter(|line| !line.is_empty())
         .map(|line| {
-            let mut points = line.split("~").map(|coords| {
-                let nums: Vec<usize> = coords.split(",").map(|number| number.parse::<usize>().unwrap_or_else(|_| panic!("invalid number {number}"))).collect();
+            let mut points = line.split('~').map(|coords| {
+                let nums: Vec<usize> = coords.split(',').map(|number| number.parse::<usize>().unwrap_or_else(|_| panic!("invalid number {number}"))).collect();
                 Point{x: nums[0], y: nums[1], z: nums[2]}
             });
             Brick::new(points.next().unwrap(), points.next().unwrap())
