@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, BTreeMap};
+use std::collections::{BTreeSet, BTreeMap, HashMap, HashSet};
 
 #[derive(Copy,Clone,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
 pub struct Point {
@@ -7,12 +7,10 @@ pub struct Point {
     z: usize,
 }
 
-#[derive(Copy,Clone,Debug,Hash,PartialOrd,Ord,PartialEq,Eq)]
+#[derive(Clone,Debug,Hash,PartialOrd,Ord,PartialEq,Eq)]
 pub struct Brick {
-    c1: Point,
-    c2: Point,
-    min: Point,
-    max: Point,
+    points: BTreeMap<(usize, usize), Vec<usize>>,
+    bottom: usize,
 }
 
 impl Brick {
@@ -23,127 +21,72 @@ impl Brick {
         let x1 = c1.x.max(c2.x);
         let z0 = c1.z.min(c2.z);
         let z1 = c1.z.max(c2.z);
+
+        let mut points: BTreeMap<(usize, usize), Vec<usize>> = BTreeMap::new();
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                for z in z0..=z1 {
+                    points.entry((x, y)).or_default().push(z);
+                }
+            }
+        }
         Brick{
-            c1,
-            c2,
-            min: Point{x: x0, y: y0, z: z0},
-            max: Point{x: x1, y: y1, z: z1}
+            points,
+            bottom: z0,
         }
     }
 
     fn fall(&mut self, height: usize) {
-        self.c1.z -= height;
-        self.c2.z -= height;
-        self.min.z -= height;
-        self.max.z -= height;
+        self.bottom -= height;
+        for v in self.points.values_mut() {
+            for z in v.iter_mut() {
+                *z -= height;
+            }
+        }
     }
 
     fn z(&self) -> usize {
-        self.min.z
+        self.bottom
     }
 
-    fn bottom_at(&self, xt: usize, yt: usize) -> usize {
-        for z in (self.min.z..=self.max.z) {
-            for y in self.min.y..=self.max.y {
-                for x in self.min.x..=self.max.x {
-                    if(x == xt && y == yt) {
-                        return z;
-                    }
-                }
-            }
-        }
-        0
-    }
-
-    fn top_at(&self, xt: usize, yt: usize) -> usize {
-        for z in (self.min.z..=self.max.z).rev() {
-            for y in self.min.y..=self.max.y {
-                for x in self.min.x..=self.max.x {
-                    if(x == xt && y == yt) {
-                        return z;
-                    }
-                }
-            }
-        }
-        0
-    }
-
-    fn shadow(&self) -> Vec<Point> {
-        let mut points = Vec::with_capacity(self.max.y-self.min.y+self.max.x-self.min.x+1);
-        for y in self.min.y..=self.max.y {
-            for x in self.min.x..=self.max.x {
-                points.push(Point{x, y, z: 0});
-            }
-        }
-        points
+    fn distance(&self, other: &Self) -> Option<usize> {
+        self.points.iter().filter_map(|(xy, zs)| {
+            let myz = &zs[0];
+            other.points.get(xy).and_then(|ozs| {
+                ozs.iter().filter(|&oz| oz < myz).last().map(|oz| myz - oz)
+            })
+        }).min().map(|m| m - 1)
     }
 }
 
 #[derive(Debug,Clone)]
 pub struct Problem {
     bricks: Vec<Brick>,
-    collisions: BTreeMap<usize, BTreeSet<usize>>,
-    shadows: BTreeMap<Point, BTreeSet<usize>>,
-    ignored: BTreeSet<usize>,
+    disintegrated: BTreeSet<usize>,
+    dependencies: HashMap<usize, HashSet<usize>>,
 }
 
 impl Problem {
     fn new(bricks: &[Brick]) -> Self {
-        let mut collisions: BTreeMap<usize, BTreeSet<usize>> = BTreeMap::new();
-        let shadows = BTreeMap::new();
-        let ignored = BTreeSet::new();
-        let mut s = Self{bricks: bricks.into(), collisions, shadows, ignored};
-        s.recalculate();
-        s
-    }
-
-    fn recalculate(&mut self) {
-        self.collisions.clear();
-        self.shadows.clear();
-        for (ix, brick) in self.bricks.iter().enumerate() {
-            for p in brick.shadow() {
-                self.shadows.entry(p).or_default().insert(ix);
-            }
+        let disintegrated = BTreeSet::new();
+        let mut bricks: Vec<_> = bricks.into();
+        bricks.sort_by(|a, b| a.bottom.cmp(&b.bottom));
+        let mut s = Self{bricks: bricks, disintegrated, dependencies: Default::default()};
+        for i in 0..s.bricks.len() {
+            s.settle_brick(i);
         }
-        self.shadows.retain(|_, v| v.len() > 1);
-        for v in self.shadows.values() {
-            for o1 in v {
-                for o2 in v {
-                    if o1 != o2 {
-                        self.collisions.entry(*o1).or_default().insert(*o2);
-                        self.collisions.entry(*o2).or_default().insert(*o1);
-                    }
-                }
-            }
-        }
-        //dbg!(self.bricks.iter().map(|b| b.len()).max());
-        //dbg!(self.collisions.values().map(|vs| vs.len()).max());
-        //dbg!(self.collisions.len(), self.bricks.len());
-    }
 
-    fn settle(&mut self, early_stop: bool) -> usize {
-        let mut changed: BTreeSet<usize> = BTreeSet::new();
-       // run until no moves are made:
-        loop {
-            let mut done = true;
-            // For every Brick
-            for i in 0..self.bricks.len() {
-                if self.ignored.contains(&i) {
+        for (ix, bi) in s.bricks.iter().enumerate() {
+            for (jx, bj) in s.bricks.iter().enumerate() {
+                if ix == jx {
                     continue;
                 }
-                if self.settle_brick(i) > 0 {
-                    done = false;
-                    changed.insert(i);
-                    if early_stop {
-                        return 1;
-                    }
+                if bi.distance(bj) == Some(0) {
+                    s.dependencies.entry(ix).or_default().insert(jx);
                 }
             }
-            if done {
-                break;
-            }
         }
-        changed.len()
+        s
     }
 
     fn settle_brick(&mut self, pos: usize) -> usize {
@@ -154,79 +97,26 @@ impl Problem {
 
     fn brick_height(&self, pos: usize) -> usize {
         // For every other shadow position of this brick
-        let mut brick = self.bricks[pos];
+        let brick = &self.bricks[pos];
         let mut max_drop = brick.z() - 1;
-        let shadow = brick.shadow();
-        for point in shadow {
-            let z = brick.bottom_at(point.x, point.y);
-            let mut new_z = 1;
-            if let Some(others) = self.shadows.get(&point) {
-                for other in others.iter() {
-                    if self.ignored.contains(other) {
-                        continue;
-                    }
-                    let other = self.bricks[*other];
-                    if other == brick {
-                        continue;
-                    }
-                    let oz = other.top_at(point.x, point.y);
-                    if oz == z {
-                        panic!("invalid height, there is an overlap!!!!");
-                    }
-                    if oz > z || oz < new_z {
-                        continue;
-                    }
-                    new_z = oz + 1;
-                }
-            };
-            max_drop = max_drop.min(z - new_z);
-        } 
+
+        for ox in 0..pos {
+            if self.disintegrated.contains(&ox) || ox == pos {
+                continue;
+            }
+            let other = &self.bricks[ox];
+            // For every overlap
+            if let Some(thisdrop) = brick.distance(&other) {
+                max_drop = max_drop.min(thisdrop);
+            }
+        }
         max_drop
     }
 
-    fn is_settled(&self) -> bool {
-        for i in 0..self.bricks.len() {
-            if self.ignored.contains(&i) {
-                continue;
-            }
-            if self.brick_height(i) > 0 {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn disintegrate(&mut self, pos: usize) {
-        self.ignored.insert(pos);
-        //let last = &(self.bricks.len() - 1);
-        //self.bricks.swap_remove(pos);
-        //collisions: BTreeMap<usize, BTreeSet<usize>>,
-        //shadows: BTreeMap<Point, BTreeSet<usize>>,
-        //self.collisions.remove(&pos);
-        //for (k, v) in self.collisions.iter_mut() {
-        //    v.remove(&pos);
-        //    if k != last {
-        //        if v.remove(last) {
-        //            v.insert(pos);
-        //            
-        //        };
-        //    }
-        //}
-        //for v in self.shadows.values_mut() {
-        //    v.remove(&pos);
-        //    if v.remove(last) {
-        //        v.insert(pos);
-        //    };
-        //}
-        //if let Some(mut c) = self.collisions.remove(last) {
-        //    c.remove(&pos);
-        //    self.collisions.insert(pos, c);
-        //}
-    }
 }
 
 pub fn parse(input: &str) -> Problem {
-    let mut bricks: Vec<Brick> = input.trim().lines().filter(|line| !line.is_empty())
+    let bricks: Vec<Brick> = input.trim().lines().filter(|line| !line.is_empty())
         .map(|line| {
             let mut points = line.split("~").map(|coords| {
                 let nums: Vec<usize> = coords.split(",").map(|number| number.parse::<usize>().unwrap_or_else(|_| panic!("invalid number {number}"))).collect();
@@ -234,21 +124,20 @@ pub fn parse(input: &str) -> Problem {
             });
             Brick::new(points.next().unwrap(), points.next().unwrap())
         }).collect();
-    let mut p = Problem::new(&bricks);
-    p.settle(false);
-    p
+    Problem::new(&bricks)
 }
 
 
 pub fn part1(problem: &Problem) -> usize {
-    //dbg!(problem.bricks.len());
     let mut safetodisintegrate = 0;
     for i in 0..problem.bricks.len() {
-        //let b = problem.bricks[i];
-        let mut alt = problem.clone();
-        alt.disintegrate(i);
-        if alt.is_settled() {
-            //println!("Can disintegrate: #{i} {b:?} ");
+        if (i+1..problem.bricks.len()).all(|j| {
+            if let Some(deps) = problem.dependencies.get(&j) {
+                !(deps.contains(&i) && deps.len() == 1)
+            } else {
+                true
+            }
+        }) {
             safetodisintegrate += 1;
         }
     }
@@ -256,12 +145,20 @@ pub fn part1(problem: &Problem) -> usize {
 }
 
 pub fn part2(problem: &Problem) -> usize {
-    let problem = problem.clone();
     let mut fallen = 0;
+    let dependencies = &problem.dependencies;
     for i in 0..problem.bricks.len() {
-        let mut alt = problem.clone();
-        alt.disintegrate(i);
-        fallen += alt.settle(false);
+        let mut falling: HashSet<usize> = Default::default();
+        falling.insert(i);
+        for j in i+1..problem.bricks.len() {
+            if let Some(deps) = dependencies.get(&j) {
+                if !deps.is_subset(&falling) {
+                    continue;
+                }
+                falling.insert(j);
+            };
+        }
+        fallen += falling.len() - 1;
     }
     fallen
 }
