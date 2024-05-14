@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 
 pub fn parse(input: &str) -> Vec<&str> {
@@ -68,8 +67,8 @@ pub fn part2(steps: &[&str]) -> usize {
 
 #[cfg(test)]
 mod test {
-    use aoc_utils::*;
     use super::*;
+    use aoc_utils::*;
     #[test]
     fn test_example1() {
         let input = &parse("rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7");
@@ -77,4 +76,3 @@ mod test {
         assert_eq!(part1(&example!("day15.example")), 1320);
     }
 }
-

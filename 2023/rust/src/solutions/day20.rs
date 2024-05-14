@@ -1,21 +1,20 @@
 use aoc_utils::lcm;
 use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{alpha1, newline},
+    combinator::opt,
+    multi::separated_list1,
+    sequence::separated_pair,
+    sequence::tuple,
     IResult,
-    combinator::{opt},
-    sequence::{tuple},
-    branch::{alt},
-    bytes::complete::{tag},
-    character::complete::{alpha1,newline},
-    multi::{separated_list1},
-    sequence::{separated_pair}
 };
 
-
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
-use std::collections::{VecDeque,BTreeMap};
-#[derive(Debug,Clone,Copy,PartialEq,Eq,Hash)]
+use std::collections::{BTreeMap, VecDeque};
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Pulse {
     High,
     Low,
@@ -23,7 +22,7 @@ enum Pulse {
 
 use Pulse::*;
 
-#[derive(Debug,Clone,PartialEq,Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Gate<'a> {
     Broadcaster,
     FlipFlop(bool),
@@ -38,26 +37,22 @@ use Gate::*;
 impl<'a> Gate<'a> {
     fn receive(&mut self, input: Pulse, gate: &'a str) -> Option<Pulse> {
         match self {
-            Broadcaster => {
-                Some(input)
-            },
-            FlipFlop(_) if input == High => {
-                None
-            },
+            Broadcaster => Some(input),
+            FlipFlop(_) if input == High => None,
             FlipFlop(ref mut state) if *state => {
                 *state = false;
                 Some(Low)
-            },
+            }
             FlipFlop(ref mut state) if !*state => {
                 *state = true;
                 Some(High)
-            },
+            }
             Breaker(target, ref mut state, ref mut proxy) => {
                 if *target == input {
                     state.replace(true);
                 }
                 proxy.receive(input, gate)
-            },
+            }
             Conjunction(ref mut memory) => {
                 memory.insert(gate, input);
                 if memory.values().all(|p| *p == High) {
@@ -71,14 +66,14 @@ impl<'a> Gate<'a> {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Circuit<'a> {
-    gates: BTreeMap<&'a str , Gate<'a>>,
-    outputs: BTreeMap<&'a str , Vec<&'a str>>,
+    gates: BTreeMap<&'a str, Gate<'a>>,
+    outputs: BTreeMap<&'a str, Vec<&'a str>>,
 }
 
 impl<'a> Circuit<'a> {
-    fn push_button(&mut self) -> (usize, usize, bool){
+    fn push_button(&mut self) -> (usize, usize, bool) {
         let mut low_count = 0;
         let mut high_count = 0;
         let mut low_rx = false;
@@ -110,22 +105,19 @@ impl<'a> Circuit<'a> {
         }
         (low_count, high_count, low_rx)
     }
-    
 }
 
 fn line(input: &str) -> IResult<&str, (&str, Gate, Vec<&str>)> {
-    let (input, ((gtype, gname), outputs)) = separated_pair(tuple((opt(alt((tag("&"), tag("%")))), alpha1)), tag(" -> "), separated_list1(tag(", "), alpha1))(input)?;
+    let (input, ((gtype, gname), outputs)) = separated_pair(
+        tuple((opt(alt((tag("&"), tag("%")))), alpha1)),
+        tag(" -> "),
+        separated_list1(tag(", "), alpha1),
+    )(input)?;
     let gate = match gtype {
-        None if gname == "broadcaster" => {
-            Broadcaster
-        },
-        Some("%") => {
-            FlipFlop(false)
-        },
-        Some("&") => {
-            Conjunction(Default::default())
-        },
-        _ => panic!("invalid gate type {gtype:?}")
+        None if gname == "broadcaster" => Broadcaster,
+        Some("%") => FlipFlop(false),
+        Some("&") => Conjunction(Default::default()),
+        _ => panic!("invalid gate type {gtype:?}"),
     };
     Ok((input, (gname, gate, outputs)))
 }
@@ -133,7 +125,7 @@ fn line(input: &str) -> IResult<&str, (&str, Gate, Vec<&str>)> {
 pub fn parse(input: &str) -> Circuit<'_> {
     let input = input.trim();
     let (_rest, lines) = separated_list1(newline, line)(input).expect("empty description");
-    let mut gates : BTreeMap<_, _> = Default::default();
+    let mut gates: BTreeMap<_, _> = Default::default();
     let mut outputs: BTreeMap<_, Vec<_>> = Default::default();
     for (name, gate, out) in lines {
         outputs.entry(name).or_default().extend(out);
@@ -144,21 +136,23 @@ pub fn parse(input: &str) -> Circuit<'_> {
             for (inname, outs) in outputs.iter() {
                 if outs.contains(name) {
                     state.insert(inname, Low);
-                    
                 }
             }
         }
     }
-    Circuit{gates, outputs}
+    Circuit { gates, outputs }
 }
 
-pub fn part1(input: &Circuit<'_>) -> usize{
+pub fn part1(input: &Circuit<'_>) -> usize {
     let mut circuit = input.clone();
-    let (lc, hc) = (0..1000).fold((0, 0), |acc, _| {let (lc, hc, _) = circuit.push_button(); (acc.0+lc, acc.1+hc)});
+    let (lc, hc) = (0..1000).fold((0, 0), |acc, _| {
+        let (lc, hc, _) = circuit.push_button();
+        (acc.0 + lc, acc.1 + hc)
+    });
     lc * hc
 }
 
-pub fn part2(input: &Circuit<'_>) -> usize{
+pub fn part2(input: &Circuit<'_>) -> usize {
     let mut circuit = input.clone();
 
     let mut target = &"rx";
@@ -169,12 +163,15 @@ pub fn part2(input: &Circuit<'_>) -> usize{
             if outputs.contains(target) {
                 adjacent.push(name);
             }
-            
         }
         match adjacent.len() {
             0 => panic!("no dependencies found"),
-            1 => {target = adjacent.pop().unwrap();},
-            _a => {break adjacent;},
+            1 => {
+                target = adjacent.pop().unwrap();
+            }
+            _a => {
+                break adjacent;
+            }
         }
     };
 
@@ -190,19 +187,18 @@ pub fn part2(input: &Circuit<'_>) -> usize{
 
     let mut cycles = vec![0; watchlist.len()];
 
-    for times in 1..{
+    for times in 1.. {
         circuit.push_button();
         for (ix, signal) in signals.iter().enumerate() {
             if *signal.as_ref().borrow() && cycles[ix] == 0 && times > 1 {
                 cycles[ix] = times;
             }
         }
-        if cycles.iter().all(|i| *i>0) {
+        if cycles.iter().all(|i| *i > 0) {
             break;
         }
     }
     cycles.into_iter().fold(1, lcm)
-
 
     // As an alternative:
     //
@@ -215,6 +211,6 @@ pub fn part2(input: &Circuit<'_>) -> usize{
     //         println!("{i}>{out}");
     //     }
     // }
-    // The graph shows 4 distinct structures that 
+    // The graph shows 4 distinct structures that
     // 243221023462303
 }

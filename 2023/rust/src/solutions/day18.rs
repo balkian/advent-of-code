@@ -1,8 +1,4 @@
-
-
-
-
-#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Direction {
     Up,
     Down,
@@ -10,7 +6,7 @@ enum Direction {
     Right,
 }
 
-#[derive(Debug,Clone,Copy,PartialEq,Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Instruction<'a> {
     direction: Direction,
     count: usize,
@@ -19,7 +15,7 @@ pub struct Instruction<'a> {
 
 impl<'a> Instruction<'a> {
     fn convert(&self) -> Instruction<'_> {
-        let color = self.color.trim_matches(&['#', '(', ')'] as &[_]);        
+        let color = self.color.trim_matches(&['#', '(', ')'] as &[_]);
         let (count, direction) = color.split_at(5);
         let count = usize::from_str_radix(count, 16).expect("invalid number {count}");
         let direction = match direction {
@@ -29,14 +25,19 @@ impl<'a> Instruction<'a> {
             "3" => Direction::Up,
             _ => panic!("invalid direction"),
         };
-        Instruction{count, direction, color: self.color}
+        Instruction {
+            count,
+            direction,
+            color: self.color,
+        }
     }
-
 }
 
 pub fn parse(input: &str) -> Vec<Instruction<'_>> {
-    input.lines().filter(|line| !line.is_empty())
-    .map(|line| {
+    input
+        .lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| {
             let tokens: Vec<_> = line.split_whitespace().collect();
             let direction = match tokens[0] {
                 "U" => Direction::Up,
@@ -46,8 +47,13 @@ pub fn parse(input: &str) -> Vec<Instruction<'_>> {
                 a => panic!("unknown direction {a}"),
             };
             let count = tokens[1].parse::<usize>().expect("could not split number");
-            Instruction{direction, count, color: tokens[2]}
-        }).collect()
+            Instruction {
+                direction,
+                count,
+                color: tokens[2],
+            }
+        })
+        .collect()
 }
 
 pub fn solve_vertices(instructions: &[Instruction]) -> usize {
@@ -58,18 +64,17 @@ pub fn solve_vertices(instructions: &[Instruction]) -> usize {
 
     let mut vertices = vec![];
 
-
     for instruction in instructions {
         match instruction.direction {
             Direction::Up => {
                 y -= instruction.count as isize;
-            },
+            }
             Direction::Down => {
                 y += instruction.count as isize;
-            },
+            }
             Direction::Right => {
                 x += instruction.count as isize;
-            },
+            }
             Direction::Left => {
                 x -= instruction.count as isize;
             }
@@ -77,7 +82,6 @@ pub fn solve_vertices(instructions: &[Instruction]) -> usize {
         perimeter += instruction.count;
         vertices.push((y, x));
     }
-
 
     // Shoelace formula
     // A = (1/2) * sum((x-x')*(y+y'))
@@ -90,12 +94,18 @@ pub fn solve_vertices(instructions: &[Instruction]) -> usize {
     // 2*i+2*b = 2*A + b + 2
     // i+b = (2*A+b+2)/2
 
-    let twice_area: usize = (vertices.windows(2).map(|ps| {
-        // acc + ps[0].0*ps[1].1-ps[1].0*ps[0].1
-        (ps[1].1-ps[0].1)*(ps[1].0+ps[0].0)
-    }).sum::<isize>().abs()).try_into().expect("could not convert area");
+    let twice_area: usize = (vertices
+        .windows(2)
+        .map(|ps| {
+            // acc + ps[0].0*ps[1].1-ps[1].0*ps[0].1
+            (ps[1].1 - ps[0].1) * (ps[1].0 + ps[0].0)
+        })
+        .sum::<isize>()
+        .abs())
+    .try_into()
+    .expect("could not convert area");
 
-    (twice_area + perimeter+ 2) / 2
+    (twice_area + perimeter + 2) / 2
 }
 
 pub fn part1(input: &[Instruction]) -> usize {

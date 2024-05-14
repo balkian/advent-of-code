@@ -1,13 +1,13 @@
-use std::collections::{BTreeSet, BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-#[derive(Copy,Clone,Debug,PartialEq,Eq,PartialOrd,Ord,Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Point {
     x: usize,
     y: usize,
     z: usize,
 }
 
-#[derive(Clone,Debug,Hash,PartialOrd,Ord,PartialEq,Eq)]
+#[derive(Clone, Debug, Hash, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Brick {
     points: BTreeMap<(usize, usize), Vec<usize>>,
     bottom: usize,
@@ -30,10 +30,7 @@ impl Brick {
                 }
             }
         }
-        Brick{
-            points,
-            bottom: z0,
-        }
+        Brick { points, bottom: z0 }
     }
 
     fn fall(&mut self, height: usize) {
@@ -50,16 +47,21 @@ impl Brick {
     }
 
     fn distance(&self, other: &Self) -> Option<usize> {
-        self.points.iter().filter_map(|(xy, zs)| {
-            let myz = &zs[0];
-            other.points.get(xy).and_then(|ozs| {
-                ozs.iter().filter(|&oz| oz < myz).last().map(|oz| myz - oz)
+        self.points
+            .iter()
+            .filter_map(|(xy, zs)| {
+                let myz = &zs[0];
+                other
+                    .points
+                    .get(xy)
+                    .and_then(|ozs| ozs.iter().filter(|&oz| oz < myz).last().map(|oz| myz - oz))
             })
-        }).min().map(|m| m - 1)
+            .min()
+            .map(|m| m - 1)
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Problem {
     bricks: Vec<Brick>,
     disintegrated: BTreeSet<usize>,
@@ -71,7 +73,11 @@ impl Problem {
         let disintegrated = BTreeSet::new();
         let mut bricks: Vec<_> = bricks.into();
         bricks.sort_by(|a, b| a.bottom.cmp(&b.bottom));
-        let mut s = Self{bricks, disintegrated, dependencies: Default::default()};
+        let mut s = Self {
+            bricks,
+            disintegrated,
+            dependencies: Default::default(),
+        };
         for i in 0..s.bricks.len() {
             s.settle_brick(i);
         }
@@ -110,26 +116,39 @@ impl Problem {
         }
         max_drop
     }
-
 }
 
 pub fn parse(input: &str) -> Problem {
-    let bricks: Vec<Brick> = input.trim().lines().filter(|line| !line.is_empty())
+    let bricks: Vec<Brick> = input
+        .trim()
+        .lines()
+        .filter(|line| !line.is_empty())
         .map(|line| {
             let mut points = line.split('~').map(|coords| {
-                let nums: Vec<usize> = coords.split(',').map(|number| number.parse::<usize>().unwrap_or_else(|_| panic!("invalid number {number}"))).collect();
-                Point{x: nums[0], y: nums[1], z: nums[2]}
+                let nums: Vec<usize> = coords
+                    .split(',')
+                    .map(|number| {
+                        number
+                            .parse::<usize>()
+                            .unwrap_or_else(|_| panic!("invalid number {number}"))
+                    })
+                    .collect();
+                Point {
+                    x: nums[0],
+                    y: nums[1],
+                    z: nums[2],
+                }
             });
             Brick::new(points.next().unwrap(), points.next().unwrap())
-        }).collect();
+        })
+        .collect();
     Problem::new(&bricks)
 }
-
 
 pub fn part1(problem: &Problem) -> usize {
     let mut safetodisintegrate = 0;
     for i in 0..problem.bricks.len() {
-        if (i+1..problem.bricks.len()).all(|j| {
+        if (i + 1..problem.bricks.len()).all(|j| {
             if let Some(deps) = problem.dependencies.get(&j) {
                 !(deps.contains(&i) && deps.len() == 1)
             } else {
@@ -148,7 +167,7 @@ pub fn part2(problem: &Problem) -> usize {
     for i in 0..problem.bricks.len() {
         let mut falling: HashSet<usize> = Default::default();
         falling.insert(i);
-        for j in i+1..problem.bricks.len() {
+        for j in i + 1..problem.bricks.len() {
             if let Some(deps) = dependencies.get(&j) {
                 if !deps.is_subset(&falling) {
                     continue;

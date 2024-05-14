@@ -47,14 +47,16 @@ fn index_by_windows(springs: &[Spring], size: usize) -> impl Iterator<Item = usi
 fn resolve(springs: &[Spring], damaged: &[usize]) -> usize {
     let mut memo = HashMap::<(&[Spring], &[usize]), usize>::new();
     let mut reused = 0;
-    
+
     // dbg!(&memo.len(), reused);
     resolve_memoized(springs, damaged, &mut memo, &mut reused)
 }
 
-fn resolve_memoized<'b>(springs: &'b[Spring], damaged: &'b[usize],
-     memo: &mut HashMap<(&'b [Spring], &'b [usize]), usize>,
-    counter: &mut usize
+fn resolve_memoized<'b>(
+    springs: &'b [Spring],
+    damaged: &'b [usize],
+    memo: &mut HashMap<(&'b [Spring], &'b [usize]), usize>,
+    counter: &mut usize,
 ) -> usize {
     if let Some(sol) = memo.get(&(springs, damaged)) {
         *counter += 1;
