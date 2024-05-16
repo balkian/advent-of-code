@@ -56,10 +56,7 @@ impl Grid {
     }
 
     fn options_from_graph(&self, pos: (usize, usize)) -> impl Iterator<Item = (&Point, &usize)> {
-        self.graph
-            .get(&pos)
-            .expect("origin not in graph")
-            .iter()
+        self.graph.get(&pos).expect("origin not in graph").iter()
     }
 
     fn options_from_tiles(&self, pos: (usize, usize), slippery: bool) -> Vec<(usize, usize)> {

@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 aoc_utils = { path = "../../utils/rust/aoc_utils"}
+glam = "0.27.0"
 itertools = "0.10.5"
 nalgebra = "0.31.4"
 nom = "7.1.1"
