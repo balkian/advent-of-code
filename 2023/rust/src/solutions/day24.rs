@@ -33,8 +33,8 @@ impl Stone {
         let b = pos[1] - pos[0] * (vel[1] / vel[0]);
 
         Self {
-            vel: vel.into(),
-            pos: pos.into(),
+            vel,
+            pos,
             a,
             b,
         }
@@ -111,7 +111,7 @@ pub fn part1(input: &Hail) -> usize {
 pub fn part2(input: &Hail) -> usize {
     // It has to collide with every hailstone,
     // so we can pick one at random as our reference.
-    let origin = input.stones[0].clone();
+    let origin = input.stones[0];
     // Then we convert the coordinate system to use our origin
     // hailstone as origin.
     let rotated: Vec<Stone> = input
