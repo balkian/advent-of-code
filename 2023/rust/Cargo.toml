@@ -17,6 +17,7 @@ itertools = "0.10.5"
 nalgebra = "0.31.4"
 nom = "7.1.1"
 once_cell = "1.16.0"
+rand = "0.8.5"
 regex = "1.7.0"
 
 [build-dependencies]
