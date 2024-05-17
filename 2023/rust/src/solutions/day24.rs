@@ -32,12 +32,7 @@ impl Stone {
         let a = vel[1] / vel[0];
         let b = pos[1] - pos[0] * (vel[1] / vel[0]);
 
-        Self {
-            vel,
-            pos,
-            a,
-            b,
-        }
+        Self { vel, pos, a, b }
     }
 
     fn collision_at_xy(&self, other: &Self) -> Option<[f64; 2]> {
