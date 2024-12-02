@@ -6,12 +6,11 @@ pub fn parse(input: &str) -> Vec<(usize, usize)> {
         .lines()
         .filter(|line| !line.is_empty())
         .map(|line| {
-            let nums: Vec<usize> = line
+            let mut nums = line
                 .trim()
                 .split_whitespace()
-                .map(|num| usize::from_str(num).expect("invalid number"))
-                .collect();
-            (nums[0], nums[1])
+                .map(|num| usize::from_str(num).expect("invalid number"));
+            (nums.next().expect("no numbers available"), nums.next().expect("only one number available"))
         })
         .collect()
 }
