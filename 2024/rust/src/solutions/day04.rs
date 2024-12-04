@@ -49,6 +49,24 @@ pub fn part1(i: &[Vec<char>]) -> usize {
     found
 }
 
+/// Specific search for two MAS words in an X shape.
+/// This could be generalized to words of odd length by splitting the word in two and iterating
+/// over the two sides similar to how we did it in part1.
 pub fn part2(i: &[Vec<char>]) -> usize {
-    todo!("still on part 1")
+    let mut found = 0;
+    for (ix, row) in i.iter().enumerate().skip(1).rev().skip(1) {
+        for (jx, c) in row.iter().enumerate().skip(1).rev().skip(1) {
+            if c != &'A' {
+                continue;
+            }
+            let left = (i[ix - 1][jx - 1] == 'M' && i[ix + 1][jx + 1] == 'S')
+                || (i[ix - 1][jx - 1] == 'S' && i[ix + 1][jx + 1] == 'M');
+            let right = (i[ix + 1][jx - 1] == 'M' && i[ix - 1][jx + 1] == 'S')
+                || (i[ix + 1][jx - 1] == 'S' && i[ix - 1][jx + 1] == 'M');
+            if left && right {
+                found += 1;
+            }
+        }
+    }
+    found
 }
