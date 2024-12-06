@@ -1,59 +1,59 @@
 extern crate nalgebra as na;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 type Pos = na::Point2<isize>;
 
 #[derive(Debug,Copy,Clone,PartialEq,Eq,Default,Hash)]
 enum Dir {
-    Left,
     #[default]
+    Left,
     Right,
     Up,
     Down
 }
 
-//impl Default for Dir {
-//    fn default() -> Self {
-//        Dir::Right
-//    }
-//}
+const VECTORS: [na::Vector2<isize>; 4] = [na::vector![-1, 0], na::vector![1, 0], na::vector![0, -1], na::vector![0, 1]];
 
-impl std::ops::Add<Pos> for Dir {
+impl std::ops::Add<Dir> for Pos {
     type Output = Pos;
 
-    fn add(self, other: Pos) -> Pos {
-        let delta = match self {
+    fn add(self, other: Dir) -> Pos {
+        let delta = match other {
             Dir::Left => {
-                na::vector![-1, 0]
+                VECTORS[0]
             },
             Dir::Right => {
-                na::vector![1, 0]
+                VECTORS[1]
             },
             Dir::Up => {
-                na::vector![0, -1]
+                VECTORS[2]
             },
             Dir::Down => {
-                na::vector![0, 1]
+                VECTORS[3]
             }
         };
-        other + delta
+        self + delta
     }
 }
 
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 pub struct Guard {
     pos: Pos,
     dir: Dir,
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct Grid {
     obstacles: HashSet<Pos>,
     limits: Pos,
 }
 
 impl Guard {
-    fn advance(&mut self) -> bool {
+    fn advance(&mut self, grid: &Grid) -> bool {
         self.pos = loop {
-            let next = self.dir + self.pos;
-            if !self.obstacles.contains(&next) {
+            let next = self.pos + self.dir;
+            if !grid.obstacles.contains(&next) {
                 break next;
             }
             self.dir = match self.dir {
@@ -63,11 +63,11 @@ impl Guard {
                 Dir::Left => Dir::Up,
             };
         };
-        (0..=self.limits.x).contains(&self.pos.coords.x) && (0..=self.limits.y).contains(&self.pos.y)
+        (0..=grid.limits.x).contains(&self.pos.coords.x) && (0..=grid.limits.y).contains(&self.pos.y)
     }
 }
 
-pub fn parse(i: &str) -> Guard {
+pub fn parse(i: &str) -> (Guard, Grid) {
     let mut pos = na::point![0, 0];
     let mut dir = Dir::Up;
     let mut obstacles: HashSet<Pos> = Default::default();
@@ -105,22 +105,52 @@ pub fn parse(i: &str) -> Guard {
             }
         }
     }
-    Guard{pos, dir, obstacles, limits}
+    (Guard{pos, dir}, Grid{obstacles, limits})
 }
 
-pub fn part1(g: &Guard) -> usize {
+pub fn part1((guard, grid): &(Guard, Grid)) -> usize {
     let mut visited = HashSet::new();
-    let mut g = g.clone();
+    let mut g = guard.clone();
     visited.insert(g.pos);
     loop {
         visited.insert(g.pos);
-        if !g.advance() {
+        if !g.advance(grid) {
             break;
         }
     }
     visited.len()
 }
 
-pub fn part2(g: &Guard) -> usize {
-    todo!();
+pub fn part2((guard, grid): &(Guard, Grid)) -> usize {
+    let mut path: HashSet::<Pos> = Default::default();
+    path.insert(guard.pos);
+    let mut grid = grid.clone();
+    let mut g = guard.clone();
+    let mut opts = vec![];
+    let mut visited = HashSet::new();
+    loop {
+        let mut prev = g.clone();
+        if !g.advance(&grid) {
+            break;
+        }
+        if path.contains(&g.pos) {
+            continue;
+        }
+        path.insert(g.pos.clone());
+        let opt = g.pos;
+        visited.clear();
+        grid.obstacles.insert(opt); // Add an obstacle in front
+        loop {
+            visited.insert(prev.clone());
+            if !prev.advance(&grid) {
+                break;
+            }
+            if visited.contains(&prev) {
+                opts.push(opt);
+                break
+            }
+        }
+        grid.obstacles.remove(&opt);
+    }
+    opts.len()
 }
