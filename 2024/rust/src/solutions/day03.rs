@@ -34,15 +34,13 @@ pub fn parse(i: &str) -> Vec<Inst> {
 }
 
 pub fn part1(input: &[Inst]) -> i64 {
-    input
-        .iter()
-        .fold(0, |acc, i| {
-            if let Inst::Mul(a, b) = i {
-                acc + a * b
-            } else {
-                acc
-            }
-        })
+    input.iter().fold(0, |acc, i| {
+        if let Inst::Mul(a, b) = i {
+            acc + a * b
+        } else {
+            acc
+        }
+    })
 }
 
 pub fn part2(input: &[Inst]) -> i64 {

@@ -1,41 +1,37 @@
 extern crate nalgebra as na;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 type Pos = na::Point2<isize>;
 
-#[derive(Debug,Copy,Clone,PartialEq,Eq,Default,Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Hash)]
 enum Dir {
     #[default]
     Left,
     Right,
     Up,
-    Down
+    Down,
 }
 
-const VECTORS: [na::Vector2<isize>; 4] = [na::vector![-1, 0], na::vector![1, 0], na::vector![0, -1], na::vector![0, 1]];
+const VECTORS: [na::Vector2<isize>; 4] = [
+    na::vector![-1, 0],
+    na::vector![1, 0],
+    na::vector![0, -1],
+    na::vector![0, 1],
+];
 
 impl std::ops::Add<Dir> for Pos {
     type Output = Pos;
 
     fn add(self, other: Dir) -> Pos {
         let delta = match other {
-            Dir::Left => {
-                VECTORS[0]
-            },
-            Dir::Right => {
-                VECTORS[1]
-            },
-            Dir::Up => {
-                VECTORS[2]
-            },
-            Dir::Down => {
-                VECTORS[3]
-            }
+            Dir::Left => VECTORS[0],
+            Dir::Right => VECTORS[1],
+            Dir::Up => VECTORS[2],
+            Dir::Down => VECTORS[3],
         };
         self + delta
     }
 }
-
 
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 pub struct Guard {
@@ -63,7 +59,8 @@ impl Guard {
                 Dir::Left => Dir::Up,
             };
         };
-        (0..=grid.limits.x).contains(&self.pos.coords.x) && (0..=grid.limits.y).contains(&self.pos.y)
+        (0..=grid.limits.x).contains(&self.pos.coords.x)
+            && (0..=grid.limits.y).contains(&self.pos.y)
     }
 }
 
@@ -72,7 +69,7 @@ pub fn parse(i: &str) -> (Guard, Grid) {
     let mut dir = Dir::Up;
     let mut obstacles: HashSet<Pos> = Default::default();
     let mut limits = na::point![0, 0];
-    for (y, line) in i.lines().filter(|line| !line.is_empty()) .enumerate() {
+    for (y, line) in i.lines().filter(|line| !line.is_empty()).enumerate() {
         let y = y as isize;
         limits.y = limits.y.max(y);
         for (x, cell) in line.trim().chars().enumerate() {
@@ -83,29 +80,28 @@ pub fn parse(i: &str) -> (Guard, Grid) {
                 '^' => {
                     dir = Dir::Up;
                     pos = thispos;
-                },
+                }
                 '<' => {
                     dir = Dir::Left;
                     pos = thispos;
-                },
+                }
                 'v' => {
                     dir = Dir::Down;
                     pos = thispos;
-                },
+                }
                 '>' => {
                     dir = Dir::Right;
                     pos = thispos;
-                },
-                '.' => {
-                },
+                }
+                '.' => {}
                 '#' => {
                     obstacles.insert(thispos);
-                },
+                }
                 _ => panic!("invalid tile"),
             }
         }
     }
-    (Guard{pos, dir}, Grid{obstacles, limits})
+    (Guard { pos, dir }, Grid { obstacles, limits })
 }
 
 pub fn part1((guard, grid): &(Guard, Grid)) -> usize {
@@ -122,7 +118,7 @@ pub fn part1((guard, grid): &(Guard, Grid)) -> usize {
 }
 
 pub fn part2((guard, grid): &(Guard, Grid)) -> usize {
-    let mut path: HashSet::<Pos> = Default::default();
+    let mut path: HashSet<Pos> = Default::default();
     path.insert(guard.pos);
     let mut grid = grid.clone();
     let mut g = guard.clone();
@@ -136,7 +132,7 @@ pub fn part2((guard, grid): &(Guard, Grid)) -> usize {
         if path.contains(&g.pos) {
             continue;
         }
-        path.insert(g.pos.clone());
+        path.insert(g.pos);
         let opt = g.pos;
         visited.clear();
         grid.obstacles.insert(opt); // Add an obstacle in front
@@ -147,7 +143,7 @@ pub fn part2((guard, grid): &(Guard, Grid)) -> usize {
             }
             if visited.contains(&prev) {
                 opts.push(opt);
-                break
+                break;
             }
         }
         grid.obstacles.remove(&opt);
