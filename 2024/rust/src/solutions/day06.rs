@@ -12,22 +12,20 @@ enum Dir {
     Down,
 }
 
-const VECTORS: [na::Vector2<isize>; 4] = [
-    na::vector![-1, 0],
-    na::vector![1, 0],
-    na::vector![0, -1],
-    na::vector![0, 1],
-];
+const GOLEFT: na::Vector2<isize> = na::vector![-1, 0];
+const GORIGHT: na::Vector2<isize> = na::vector![1, 0];
+const GOUP: na::Vector2<isize> = na::vector![0, -1];
+const GODOWN: na::Vector2<isize> = na::vector![0, 1];
 
 impl std::ops::Add<Dir> for Pos {
     type Output = Pos;
 
     fn add(self, other: Dir) -> Pos {
         let delta = match other {
-            Dir::Left => VECTORS[0],
-            Dir::Right => VECTORS[1],
-            Dir::Up => VECTORS[2],
-            Dir::Down => VECTORS[3],
+            Dir::Left => GOLEFT,
+            Dir::Right => GORIGHT,
+            Dir::Up => GOUP,
+            Dir::Down => GODOWN,
         };
         self + delta
     }
@@ -46,21 +44,28 @@ pub struct Grid {
 }
 
 impl Guard {
-    fn advance(&mut self, grid: &Grid) -> bool {
-        self.pos = loop {
+    /// Updates the position of the Guard until it reaches the end of the grid (true)
+    /// or an obstacle (false)
+    fn straight<F: FnMut(&Self)>(&mut self, grid: &Grid, mut updater: F) -> bool {
+        loop {
             let next = self.pos + self.dir;
-            if !grid.obstacles.contains(&next) {
-                break next;
+            if !((0..=grid.limits.x).contains(&self.pos.coords.x)
+                && (0..=grid.limits.y).contains(&self.pos.y))
+            {
+                return false;
             }
-            self.dir = match self.dir {
-                Dir::Up => Dir::Right,
-                Dir::Right => Dir::Down,
-                Dir::Down => Dir::Left,
-                Dir::Left => Dir::Up,
-            };
-        };
-        (0..=grid.limits.x).contains(&self.pos.coords.x)
-            && (0..=grid.limits.y).contains(&self.pos.y)
+            if grid.obstacles.contains(&next) {
+                self.dir = match self.dir {
+                    Dir::Up => Dir::Right,
+                    Dir::Right => Dir::Down,
+                    Dir::Down => Dir::Left,
+                    Dir::Left => Dir::Up,
+                };
+                return true;
+            }
+            updater(self);
+            self.pos = next;
+        }
     }
 }
 
@@ -107,10 +112,11 @@ pub fn parse(i: &str) -> (Guard, Grid) {
 pub fn part1((guard, grid): &(Guard, Grid)) -> usize {
     let mut visited = HashSet::new();
     let mut g = guard.clone();
-    visited.insert(g.pos);
-    loop {
+    let mut visit = |g: &Guard| {
         visited.insert(g.pos);
-        if !g.advance(grid) {
+    };
+    loop {
+        if !g.straight(grid, &mut visit) {
             break;
         }
     }
@@ -124,29 +130,36 @@ pub fn part2((guard, grid): &(Guard, Grid)) -> usize {
     let mut g = guard.clone();
     let mut opts = vec![];
     let mut visited = HashSet::new();
+    let mut wave = vec![];
     loop {
-        let mut prev = g.clone();
-        if !g.advance(&grid) {
+        let start = g.clone();
+        let done = !g.straight(&grid, |g| {
+            wave.push(g.pos);
+        });
+        wave.push(g.pos);
+        for opt in wave.drain(..).skip(1) {
+            if path.contains(&opt) {
+                continue;
+            }
+            let mut prev = start.clone();
+            visited.clear();
+            grid.obstacles.insert(opt);
+            loop {
+                visited.insert(prev.clone());
+                if !prev.straight(&grid, |_| {}) {
+                    break;
+                }
+                if visited.contains(&prev) {
+                    opts.push(opt);
+                    break;
+                }
+            }
+            grid.obstacles.remove(&opt);
+            path.insert(opt);
+        }
+        if done {
             break;
         }
-        if path.contains(&g.pos) {
-            continue;
-        }
-        path.insert(g.pos);
-        let opt = g.pos;
-        visited.clear();
-        grid.obstacles.insert(opt); // Add an obstacle in front
-        loop {
-            visited.insert(prev.clone());
-            if !prev.advance(&grid) {
-                break;
-            }
-            if visited.contains(&prev) {
-                opts.push(opt);
-                break;
-            }
-        }
-        grid.obstacles.remove(&opt);
     }
     opts.len()
 }
