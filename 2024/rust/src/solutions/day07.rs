@@ -33,16 +33,13 @@ impl Equation {
     }
 }
 
-pub fn parseall(i: &str) -> IResult<&str, Vec<Equation>> {
+pub fn parse(i: &str) -> Vec<Equation> {
     let equation = map(
         separated_pair(nomi64, tag(": "), separated_list1(space1, nomi64)),
         |(res, ops)| Equation { res, ops },
     );
-    terminated(separated_list1(line_ending, equation), multispace1)(i)
-}
-
-pub fn parse(i: &str) -> Vec<Equation> {
-    let (i, eqs) = parseall(i).expect("could not parse input");
+    let res: IResult<_, _> = terminated(separated_list1(line_ending, equation), multispace1)(i);
+    let (i, eqs) = res.expect("could not parse input");
     assert!(i.is_empty());
     eqs
 }
