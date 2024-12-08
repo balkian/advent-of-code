@@ -106,6 +106,7 @@ version = "0.1.0"
 dependencies = [
  "aoc_builder",
  "aoc_utils",
+ "gcd",
  "nalgebra 0.33.2",
  "nom",
  "regex",
@@ -404,6 +405,12 @@ dependencies = [
  "pin-utils",
  "slab",
 ]
+
+[[package]]
+name = "gcd"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d758ba1b47b00caf47f24925c0074ecb20d6dfcffe7f6d53395c0465674841a"
 
 [[package]]
 name = "getrandom"
