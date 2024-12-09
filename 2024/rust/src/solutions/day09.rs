@@ -35,28 +35,27 @@ pub fn part1(i: &Input) -> usize {
             (_, Byte::Empty(_)) => {
                 right -= 1;
             },
-            (Byte::Empty(free), Byte::Occupied{size, id}) => {
-                if free > size {
+            (Byte::Empty(free), Byte::Occupied{size, id: _}) if free > size => {
                     let size = *size;
                     let free = *free;
-                    let id = *id;
                     i[left] = Byte::Empty(free - size);
                     let r = i.remove(right);
                     i.insert(left, r);
                     //right -= 1; There has been an insert one insert earlier
                     left += 1;
-                } else if free == size {
+            },
+            (Byte::Empty(free), Byte::Occupied{size, id: _}) if free == size => {
                     i[left] = i.remove(right);
                     right -= 1;
                     left += 1;
-                } else {
+            },
+            (Byte::Empty(free), Byte::Occupied{size, id}) => {
                     let free = *free;
                     let size = *size;
                     let id = *id;
-                    i[left] = Byte::Occupied{size: free, id: id};
-                    i[right] = Byte::Occupied{size: size - free, id: id};
+                    i[left] = Byte::Occupied{size: free, id};
+                    i[right] = Byte::Occupied{size: size - free, id};
                     left += 1;
-                }
             }
         }
     }
@@ -82,7 +81,7 @@ pub fn part2(i: &Input) -> usize {
     let mut i = i.clone();
     let mut right = i.len() - 1; 
     while right > 0 {
-        let Byte::Occupied{size, id} = &i[right] else {
+        let Byte::Occupied{size, id: _} = &i[right] else {
             right -= 1;
             continue;
         };
