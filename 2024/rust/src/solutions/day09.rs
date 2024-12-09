@@ -79,5 +79,48 @@ pub fn part1(i: &Input) -> usize {
 }
 
 pub fn part2(i: &Input) -> usize {
-    todo!();
+    let mut i = i.clone();
+    let mut right = i.len() - 1; 
+    while right > 0 {
+        let Byte::Occupied{size, id} = &i[right] else {
+            right -= 1;
+            continue;
+        };
+        for left in 0..right {
+            match &i[left] {
+                Byte::Empty(free) if free == size => {
+                    i.swap(left, right);
+                    break;
+                },
+                Byte::Empty(free) if free > size => {
+                    let size = *size;
+                    i.insert(left+1, Byte::Empty(free - size));
+                    right += 1;
+                    i[left] = Byte::Empty(size);
+                    i.swap(left, right);
+                    break;
+                },
+                _ => {
+                    continue;
+                },
+            }
+        }
+        right -= 1;
+    }
+    let mut pos = 0;
+    let mut total = 0;
+    for block in i {
+        match block {
+            Byte::Empty(free) => {
+                pos += free;
+            },
+            Byte::Occupied{size, id} => {
+                for _ in 0..size {
+                    total += pos * id;
+                    pos += 1;
+                }
+            },
+        }
+    }
+    total
 }
