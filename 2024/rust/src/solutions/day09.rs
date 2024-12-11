@@ -77,6 +77,7 @@ pub fn part1(i: &Input) -> usize {
     total
 }
 
+#[allow(clippy::mut_range_bound)]
 pub fn part2(i: &Input) -> usize {
     let mut i = i.clone();
     let mut right = i.len() - 1; 
