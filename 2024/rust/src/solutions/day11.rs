@@ -6,7 +6,6 @@ pub struct Node {
     next: Option<Box<Node>>,
 }
 
-
 impl IntoIterator for Node {
     type Item = usize;
     type IntoIter = NodeIterator;
@@ -33,7 +32,7 @@ impl Iterator for NodeIterator {
 }
 
 impl Node {
-    fn blink(&mut self) -> &mut Self  {
+    fn blink(&mut self) -> &mut Self {
         if self.value == 0 {
             self.value = 1;
             return self;
@@ -41,7 +40,10 @@ impl Node {
         let n_digits = self.value.ilog10() + 1;
         if n_digits % 2 == 0 {
             let mult = 10usize.pow(n_digits / 2);
-            let tail = self.next.replace(Box::new(Node{value: self.value % mult, next: None}));
+            let tail = self.next.replace(Box::new(Node {
+                value: self.value % mult,
+                next: None,
+            }));
             self.value /= mult;
             let right = self.next.as_mut().unwrap();
             right.next = tail;
@@ -51,15 +53,25 @@ impl Node {
             self
         }
     }
-
 }
 
 pub fn parse(i: &str) -> Vec<usize> {
-    i.split_whitespace().map(|n| n.parse::<usize>().expect("could not parse number")).collect()
+    i.split_whitespace()
+        .map(|n| n.parse::<usize>().expect("could not parse number"))
+        .collect()
 }
 
 pub fn part1(i: &[usize]) -> usize {
-    let mut root = i.iter().rev().fold(None, |acc, val| Some(Node{value: *val, next: acc.map(Box::new)})).expect("no nodes");
+    let mut root = i
+        .iter()
+        .rev()
+        .fold(None, |acc, val| {
+            Some(Node {
+                value: *val,
+                next: acc.map(Box::new),
+            })
+        })
+        .expect("no nodes");
     for _i in 0..25 {
         let mut cur = &mut root;
         loop {
@@ -74,7 +86,10 @@ pub fn part1(i: &[usize]) -> usize {
     root.into_iter().count()
 }
 pub fn part2(i: &[usize]) -> usize {
-    let mut counter: HashMap<usize, usize> = i.iter().fold(Default::default(), |mut acc, val| {*acc.entry(*val).or_default() += 1; acc});
+    let mut counter: HashMap<usize, usize> = i.iter().fold(Default::default(), |mut acc, val| {
+        *acc.entry(*val).or_default() += 1;
+        acc
+    });
     for _i in 0..75 {
         let mut nc: HashMap<usize, usize> = Default::default();
         for (val, count) in counter {
