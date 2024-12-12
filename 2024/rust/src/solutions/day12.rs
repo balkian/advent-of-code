@@ -46,20 +46,22 @@ fn regions_area(input: &Input) -> (Vec<Vec<usize>>, HashMap<usize, usize>) {
     (regions, area)
 }
 
+/// Check whether the content of two elements in a grid are different.
+/// The positions are determined by a valid position and the offset of the other position.
+/// An element outside of the grid is always different 
+fn changes<T: Eq>(grid: &[Vec<T>], (i, j): (usize, usize), (di, dj): (isize, isize)) -> bool {
+    let (pi, underi) = i.overflowing_add_signed(di);
+    let (pj, underj) = j.overflowing_add_signed(dj);
+    underi || underj || pi >= grid.len() || pj >= grid[pi].len() || grid[pi][pj] != grid[i][j]
+}
+
 pub fn part1(input: &Input) -> usize {
     let (regions, area) = regions_area(input);
     let mut fences: HashMap<usize, usize> = Default::default();
     for (i, row) in regions.iter().enumerate() {
         for (j, target) in row.iter().enumerate() {
             for (di, dj) in [(-1, 0), (1, 0), (0, 1), (0, -1)] {
-                let (pi, underi) = i.overflowing_add_signed(di);
-                let (pj, underj) = j.overflowing_add_signed(dj);
-                if underi
-                    || underj
-                    || pi >= input.len()
-                    || pj >= input[pi].len()
-                    || regions[pi][pj] != *target
-                {
+                if changes(&regions, (i, j), (di, dj)) {
                     fences.entry(*target).and_modify(|v| *v += 1).or_insert(1);
                 }
             }
@@ -73,15 +75,6 @@ pub fn part1(input: &Input) -> usize {
             v * a
         })
         .sum()
-}
-
-/// Check whether the content of two elements in a grid are different.
-/// The positions are determined by a valid position and the offset of the other position.
-/// An element outside of the grid is always different 
-fn changes<T: Eq>(grid: &[Vec<T>], (i, j): (usize, usize), (di, dj): (isize, isize)) -> bool {
-    let (pi, underi) = i.overflowing_add_signed(di);
-    let (pj, underj) = j.overflowing_add_signed(dj);
-    underi || underj || pi >= grid.len() || pj >= grid[pi].len() || grid[pi][pj] != grid[i][j]
 }
 
 pub fn part2(input: &Input) -> usize {
