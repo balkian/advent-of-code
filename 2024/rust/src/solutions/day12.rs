@@ -3,16 +3,19 @@ use std::collections::HashMap;
 type Input = Vec<Vec<char>>;
 
 pub fn parse(i: &str) -> Input {
-    i.trim().lines().map(|line| line.chars().collect()).collect()
+    i.trim()
+        .lines()
+        .map(|line| line.chars().collect())
+        .collect()
 }
 
-pub fn part1(input: &Input) -> usize {
+fn regions_area(input: &Input) -> (Vec<Vec<usize>>, HashMap<usize, usize>) {
     let mut regions: Vec<Vec<usize>> = vec![vec![0; input[0].len()]; input.len()];
     let mut area: HashMap<usize, usize> = Default::default();
     let mut nregions = 0;
     for (i, row) in input.iter().enumerate() {
         for (j, target) in row.iter().enumerate() {
-            if regions[i][j] != 0  {
+            if regions[i][j] != 0 {
                 continue;
             }
             nregions += 1;
@@ -27,7 +30,12 @@ pub fn part1(input: &Input) -> usize {
                 for (di, dj) in [(-1, 0), (1, 0), (0, 1), (0, -1)] {
                     let (pi, underi) = ni.overflowing_add_signed(di);
                     let (pj, underj) = nj.overflowing_add_signed(dj);
-                    if underi || underj || pi >= input.len() || pj >= input[pi].len() || input[pi][pj] != *target {
+                    if underi
+                        || underj
+                        || pi >= input.len()
+                        || pj >= input[pi].len()
+                        || input[pi][pj] != *target
+                    {
                         continue;
                     }
                     pending.push((pi, pj));
@@ -35,30 +43,77 @@ pub fn part1(input: &Input) -> usize {
             }
         }
     }
+    (regions, area)
+}
+
+pub fn part1(input: &Input) -> usize {
+    let (regions, area) = regions_area(input);
     let mut fences: HashMap<usize, usize> = Default::default();
     for (i, row) in regions.iter().enumerate() {
         for (j, target) in row.iter().enumerate() {
-                for (di, dj) in [(-1, 0), (1, 0), (0, 1), (0, -1)] {
-                    let (pi, underi) = i.overflowing_add_signed(di);
-                    let (pj, underj) = j.overflowing_add_signed(dj);
-                    if underi || underj || pi >= input.len() || pj >= input[pi].len() || regions[pi][pj] != *target{
-                        fences.entry(*target).and_modify(|v| *v += 1).or_insert(1);
-                    }
+            for (di, dj) in [(-1, 0), (1, 0), (0, 1), (0, -1)] {
+                let (pi, underi) = i.overflowing_add_signed(di);
+                let (pj, underj) = j.overflowing_add_signed(dj);
+                if underi
+                    || underj
+                    || pi >= input.len()
+                    || pj >= input[pi].len()
+                    || regions[pi][pj] != *target
+                {
+                    fences.entry(*target).and_modify(|v| *v += 1).or_insert(1);
                 }
+            }
         }
     }
 
-   // dbg!(&area);
-   // dbg!(&fences);
-
-    fences.into_iter().map(|(k, v)| { 
-        let a = area.get(&k).expect("char not found in area");
-        let total = v * a;
-        //eprintln!("{k} => {v} {a} = {total}");
-        total
-    }).sum()
+    fences
+        .into_iter()
+        .map(|(k, v)| {
+            let a = area.get(&k).expect("char not found in area");
+            v * a
+        })
+        .sum()
 }
 
-pub fn part2(i: &Input) -> usize {
-    todo!();
+/// Check whether the content of two elements in a grid are different.
+/// The positions are determined by a valid position and the offset of the other position.
+/// An element outside of the grid is always different 
+fn changes<T: Eq>(grid: &[Vec<T>], (i, j): (usize, usize), (di, dj): (isize, isize)) -> bool {
+    let (pi, underi) = i.overflowing_add_signed(di);
+    let (pj, underj) = j.overflowing_add_signed(dj);
+    underi || underj || pi >= grid.len() || pj >= grid[pi].len() || grid[pi][pj] != grid[i][j]
+}
+
+pub fn part2(input: &Input) -> usize {
+    let (regions, area) = regions_area(input);
+    let mut fences: HashMap<usize, usize> = Default::default();
+    for (i, row) in regions.iter().enumerate() {
+        for (j, target) in row.iter().enumerate() {
+            let dirs: [(isize, isize); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+            let corners = [
+                changes(&regions, (i, j), dirs[0]),
+                changes(&regions, (i, j), dirs[1]),
+                changes(&regions, (i, j), dirs[2]),
+                changes(&regions, (i, j), dirs[3]),
+            ];
+            let f = fences.entry(*target).or_default();
+            for pos in 0..4 {
+                let c1 = corners[pos];
+                let c2 = corners[(pos + 1) % 4];
+                let d1 = dirs[pos];
+                let d2 = dirs[(pos + 1) % 4];
+                let accross = (d1.0 + d2.0, d1.1 + d2.1);
+                if c1 && c2 || (!c1 && !c2 && changes(&regions, (i, j), accross)) {
+                    *f += 1;
+                }
+            }
+        }
+    }
+    fences
+        .into_iter()
+        .map(|(k, v)| {
+            let a = area.get(&k).expect("char not found in area");
+            v * a
+        })
+        .sum()
 }
