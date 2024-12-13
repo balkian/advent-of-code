@@ -90,11 +90,13 @@ macro_rules! solve_1 {
             inputs = std::path::Path::new("inputs");
         }
         let i_f = inputs.join(st);
-        $crate::download_day(stringify!($day), $year, &i_f);
 
         let def_file = i_f.to_str().unwrap();
 
         let fname = $input.unwrap_or(def_file);
+        if fname == def_file {
+            $crate::download_day(stringify!($day), $year, &i_f);
+        }
         println!(
             "* Running {} {}",
             stringify!($day),
