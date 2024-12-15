@@ -1,12 +1,12 @@
-use std::ops::Add;
-use nalgebra::{Point2, Vector2};
+use nalgebra::Point2;
 use std::collections::VecDeque;
+use std::ops::Add;
 
 use std::fmt;
 
 type Pos = Point2<usize>;
 
-#[derive(Clone,PartialEq,Eq,Copy)]
+#[derive(Clone, PartialEq, Eq, Copy)]
 enum Dir {
     Up,
     Down,
@@ -17,10 +17,10 @@ enum Dir {
 impl fmt::Debug for Dir {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let c = match &self {
-            Dir::Up => {'^'},
-            Dir::Down => {'v'},
-            Dir::Right => {'>'},
-            Dir::Left => {'<'},
+            Dir::Up => '^',
+            Dir::Down => 'v',
+            Dir::Right => '>',
+            Dir::Left => '<',
         };
         write!(f, "{c}")
     }
@@ -30,24 +30,15 @@ impl Add<Dir> for Pos {
     type Output = Pos;
     fn add(self, other: Dir) -> Pos {
         match other {
-            Dir::Up => {
-                Point2::new(self.coords.x, self.coords.y - 1)
-            },
-            Dir::Down => {
-                Point2::new(self.coords.x, self.coords.y + 1)
-            },
-            Dir::Right => {
-                Point2::new(self.coords.x + 1, self.coords.y)
-            },
-            Dir::Left => {
-                Point2::new(self.coords.x - 1, self.coords.y)
-            },
+            Dir::Up => Point2::new(self.coords.x, self.coords.y - 1),
+            Dir::Down => Point2::new(self.coords.x, self.coords.y + 1),
+            Dir::Right => Point2::new(self.coords.x + 1, self.coords.y),
+            Dir::Left => Point2::new(self.coords.x - 1, self.coords.y),
         }
     }
-
 }
 
-#[derive(Clone,PartialEq,Eq,Copy)]
+#[derive(Clone, PartialEq, Eq, Copy)]
 enum Tile {
     Box,
     BoxLeft,
@@ -59,11 +50,11 @@ enum Tile {
 impl fmt::Debug for Tile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let c = match &self {
-            Tile::Box => {'O'},
-            Tile::BoxLeft => {'['},
-            Tile::BoxRight => {']'},
-            Tile::Empty => {'.'},
-            Tile::Wall => {'#'},
+            Tile::Box => 'O',
+            Tile::BoxLeft => '[',
+            Tile::BoxRight => ']',
+            Tile::Empty => '.',
+            Tile::Wall => '#',
         };
         write!(f, "{c}")
     }
@@ -82,7 +73,7 @@ impl fmt::Debug for Warehouse {
             for (x, c) in row.iter().enumerate() {
                 if y == self.robot.coords.y && x == self.robot.coords.x {
                     write!(f, "@")?;
-                }else {
+                } else {
                     write!(f, "{c:?}")?;
                 }
             }
@@ -109,22 +100,18 @@ impl Warehouse {
 
     fn push(&mut self, pos: Pos, dir: Dir) -> bool {
         match (self.grid[pos.coords.y][pos.coords.x], dir) {
-            (Tile::Wall, _) => {
-                false
-            },
-            (Tile::Empty, _) => {
-                true
-            },
+            (Tile::Wall, _) => false,
+            (Tile::Empty, _) => true,
             (Tile::Box, _) | (Tile::BoxLeft | Tile::BoxRight, Dir::Left | Dir::Right) => {
                 let n = pos + dir;
                 if self.push(n, dir) {
                     self.swap(pos, n);
-                    return true;
+                    true
                 } else {
-                    return false;
+                    false
                 }
             }
-            (Tile::BoxLeft, Dir::Up | Dir::Down)  => {
+            (Tile::BoxLeft, Dir::Up | Dir::Down) => {
                 let n = pos + dir;
                 let twinpos = pos + Dir::Right;
                 let twinneigh = twinpos + dir;
@@ -135,9 +122,9 @@ impl Warehouse {
                 self.push(twinneigh, dir);
                 self.swap(pos, n);
                 self.swap(twinpos, twinneigh);
-                return true;
+                true
             }
-            (Tile::BoxRight, Dir::Up | Dir::Down)  => {
+            (Tile::BoxRight, Dir::Up | Dir::Down) => {
                 let n = pos + dir;
                 let twinpos = pos + Dir::Left;
                 let twinneigh = twinpos + dir;
@@ -148,7 +135,7 @@ impl Warehouse {
                 self.push(twinneigh, dir);
                 self.swap(pos, n);
                 self.swap(twinpos, twinneigh);
-                return true;
+                true
             }
         }
     }
@@ -162,21 +149,17 @@ impl Warehouse {
 
     fn canmove(&mut self, pos: Pos, dir: Dir) -> bool {
         match (self.grid[pos.coords.y][pos.coords.x], dir) {
-            (Tile::Wall, _) => {
-                false
-            },
-            (Tile::Empty, _) => {
-                true
-            },
+            (Tile::Wall, _) => false,
+            (Tile::Empty, _) => true,
             (Tile::Box, _) | (Tile::BoxLeft | Tile::BoxRight, Dir::Left | Dir::Right) => {
                 let n = pos + dir;
                 self.canmove(n, dir)
             }
-            (Tile::BoxLeft, Dir::Up | Dir::Down)  => {
+            (Tile::BoxLeft, Dir::Up | Dir::Down) => {
                 let n = pos + dir;
                 self.canmove(n, dir) && self.canmove(n + Dir::Right, dir)
             }
-            (Tile::BoxRight, Dir::Up | Dir::Down)  => {
+            (Tile::BoxRight, Dir::Up | Dir::Down) => {
                 let n = pos + dir;
                 self.canmove(n, dir) && self.canmove(n + Dir::Left, dir)
             }
@@ -195,7 +178,7 @@ impl Warehouse {
         score
     }
 
-    fn widen(&self) -> Warehouse{
+    fn widen(&self) -> Warehouse {
         let mut newgrid = vec![];
         for row in self.grid.iter() {
             let mut newrow = vec![];
@@ -204,15 +187,15 @@ impl Warehouse {
                     Tile::Wall => {
                         newrow.push(Tile::Wall);
                         newrow.push(Tile::Wall);
-                    },
+                    }
                     Tile::Empty => {
                         newrow.push(Tile::Empty);
                         newrow.push(Tile::Empty);
-                    },
+                    }
                     Tile::Box => {
                         newrow.push(Tile::BoxLeft);
                         newrow.push(Tile::BoxRight);
-                    },
+                    }
                     _ => {
                         panic!("trying to widen twice!!!!");
                     }
@@ -221,7 +204,11 @@ impl Warehouse {
             newgrid.push(newrow);
         }
         let newrobot = Point2::new(self.robot.coords.x * 2, self.robot.coords.y);
-        Warehouse{grid: newgrid, robot: newrobot, instructions: self.instructions.clone()}
+        Warehouse {
+            grid: newgrid,
+            robot: newrobot,
+            instructions: self.instructions.clone(),
+        }
     }
 }
 
@@ -239,22 +226,23 @@ pub fn parse(i: &str) -> Warehouse {
                 '@' => {
                     robot = Some(Point2::new(x, y));
                     row.push(Tile::Empty);
-                },
+                }
                 'O' => {
                     row.push(Tile::Box);
-                },
+                }
                 '#' => {
                     row.push(Tile::Wall);
-                },
+                }
                 '.' => {
                     row.push(Tile::Empty);
-                },
+                }
                 '\n' | '\r' => {
                     break;
-                },
-                _ => {panic!("unknown char {c}")}
+                }
+                _ => {
+                    panic!("unknown char {c}")
+                }
             }
-
         }
         grid.push(row);
     }
@@ -266,37 +254,38 @@ pub fn parse(i: &str) -> Warehouse {
             match c {
                 '<' => {
                     instructions.push_back(Dir::Left);
-                },
+                }
                 '^' => {
                     instructions.push_back(Dir::Up);
-                },
+                }
                 '>' => {
                     instructions.push_back(Dir::Right);
-                },
+                }
                 'v' => {
                     instructions.push_back(Dir::Down);
-                },
-                _ => {panic!("unknown direction");}
+                }
+                _ => {
+                    panic!("unknown direction");
+                }
             }
         }
     }
 
-    Warehouse{ robot, grid, instructions }
+    Warehouse {
+        robot,
+        grid,
+        instructions,
+    }
 }
 
 pub fn part1(w: &Warehouse) -> usize {
     let mut w = w.clone();
-    while let Some(could) = w.advance() {
-        //println!("{w:?}");
-    }
+    while w.advance().is_some() {}
     w.gps()
 }
 
 pub fn part2(w: &Warehouse) -> usize {
     let mut w = w.widen();
-    while let Some(could) = w.advance() {
-        //println!("{w:?}");
-    }
+    while w.advance().is_some() {}
     w.gps()
 }
-
