@@ -50,6 +50,8 @@ impl Add<Dir> for Pos {
 #[derive(Clone,PartialEq,Eq,Copy)]
 enum Tile {
     Box,
+    BoxLeft,
+    BoxRight,
     Empty,
     Wall,
 }
@@ -58,6 +60,8 @@ impl fmt::Debug for Tile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let c = match &self {
             Tile::Box => {'O'},
+            Tile::BoxLeft => {'['},
+            Tile::BoxRight => {']'},
             Tile::Empty => {'.'},
             Tile::Wall => {'#'},
         };
@@ -104,21 +108,77 @@ impl Warehouse {
     }
 
     fn push(&mut self, pos: Pos, dir: Dir) -> bool {
-        match self.grid[pos.coords.y][pos.coords.x] {
-            Tile::Wall => {
+        match (self.grid[pos.coords.y][pos.coords.x], dir) {
+            (Tile::Wall, _) => {
                 false
             },
-            Tile::Empty => {
+            (Tile::Empty, _) => {
                 true
             },
-            Tile::Box => {
+            (Tile::Box, _) | (Tile::BoxLeft | Tile::BoxRight, Dir::Left | Dir::Right) => {
                 let n = pos + dir;
-                if !self.push(n, dir) {
+                if self.push(n, dir) {
+                    self.swap(pos, n);
+                    return true;
+                } else {
                     return false;
                 }
-                self.grid[n.coords.y][n.coords.x] = Tile::Box;
-                self.grid[pos.coords.y][pos.coords.x] = Tile::Empty;
+            }
+            (Tile::BoxLeft, Dir::Up | Dir::Down)  => {
+                let n = pos + dir;
+                let twinpos = pos + Dir::Right;
+                let twinneigh = twinpos + dir;
+                if !self.canmove(n, dir) || !self.canmove(twinneigh, dir) {
+                    return false;
+                }
+                self.push(n, dir);
+                self.push(twinneigh, dir);
+                self.swap(pos, n);
+                self.swap(twinpos, twinneigh);
+                return true;
+            }
+            (Tile::BoxRight, Dir::Up | Dir::Down)  => {
+                let n = pos + dir;
+                let twinpos = pos + Dir::Left;
+                let twinneigh = twinpos + dir;
+                if !self.canmove(n, dir) || !self.canmove(twinneigh, dir) {
+                    return false;
+                }
+                self.push(n, dir);
+                self.push(twinneigh, dir);
+                self.swap(pos, n);
+                self.swap(twinpos, twinneigh);
+                return true;
+            }
+        }
+    }
+
+    fn swap(&mut self, p1: Pos, p2: Pos) {
+        let t1 = self.grid[p1.coords.y][p1.coords.x];
+        let t2 = self.grid[p2.coords.y][p2.coords.x];
+        self.grid[p1.coords.y][p1.coords.x] = t2;
+        self.grid[p2.coords.y][p2.coords.x] = t1;
+    }
+
+    fn canmove(&mut self, pos: Pos, dir: Dir) -> bool {
+        match (self.grid[pos.coords.y][pos.coords.x], dir) {
+            (Tile::Wall, _) => {
+                false
+            },
+            (Tile::Empty, _) => {
                 true
+            },
+            (Tile::Box, _) | (Tile::BoxLeft | Tile::BoxRight, Dir::Left | Dir::Right) => {
+                let n = pos + dir;
+                self.canmove(n, dir)
+            }
+            (Tile::BoxLeft, Dir::Up | Dir::Down)  => {
+                let n = pos + dir;
+                self.canmove(n, dir) && self.canmove(n + Dir::Right, dir)
+            }
+            (Tile::BoxRight, Dir::Up | Dir::Down)  => {
+                let n = pos + dir;
+                self.canmove(n, dir) && self.canmove(n + Dir::Left, dir)
             }
         }
     }
@@ -127,12 +187,41 @@ impl Warehouse {
         let mut score = 0;
         for (y, row) in self.grid.iter().enumerate() {
             for (x, c) in row.iter().enumerate() {
-                if matches!(c, Tile::Box) {
+                if matches!(c, Tile::Box | Tile::BoxLeft) {
                     score += 100 * y + x;
                 }
             }
         }
         score
+    }
+
+    fn widen(&self) -> Warehouse{
+        let mut newgrid = vec![];
+        for row in self.grid.iter() {
+            let mut newrow = vec![];
+            for c in row {
+                match c {
+                    Tile::Wall => {
+                        newrow.push(Tile::Wall);
+                        newrow.push(Tile::Wall);
+                    },
+                    Tile::Empty => {
+                        newrow.push(Tile::Empty);
+                        newrow.push(Tile::Empty);
+                    },
+                    Tile::Box => {
+                        newrow.push(Tile::BoxLeft);
+                        newrow.push(Tile::BoxRight);
+                    },
+                    _ => {
+                        panic!("trying to widen twice!!!!");
+                    }
+                }
+            }
+            newgrid.push(newrow);
+        }
+        let newrobot = Point2::new(self.robot.coords.x * 2, self.robot.coords.y);
+        Warehouse{grid: newgrid, robot: newrobot, instructions: self.instructions.clone()}
     }
 }
 
@@ -204,6 +293,10 @@ pub fn part1(w: &Warehouse) -> usize {
 }
 
 pub fn part2(w: &Warehouse) -> usize {
-    todo!();
+    let mut w = w.widen();
+    while let Some(could) = w.advance() {
+        //println!("{w:?}");
+    }
+    w.gps()
 }
 
