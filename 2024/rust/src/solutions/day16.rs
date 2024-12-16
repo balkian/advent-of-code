@@ -267,28 +267,26 @@ pub fn part1(g: &Grid) -> usize {
 pub fn part2(g: &Grid) -> usize {
     let min = dijkstra(g);
     let edges_to = min.expect("solution not found").1;
-    let mut paths = vec![
-        vec![Elf {
+    let mut heads = vec![
+        Elf {
             pos: g.end,
-            dir: Dir::Up,
-        }],
-        vec![Elf {
+            dir: Dir::Up},
+        Elf {
             pos: g.end,
             dir: Dir::Left,
-        }],
-        vec![Elf {
+        },
+        Elf {
             pos: g.end,
             dir: Dir::Down,
-        }],
-        vec![Elf {
+        },
+        Elf {
             pos: g.end,
             dir: Dir::Right,
-        }],
+        },
     ];
 
     let mut seen: HashSet<Pos> = Default::default();
-    while let Some(mut path) = paths.pop() {
-        let last = path[path.len() - 1];
+    while let Some(last) = heads.pop() {
         seen.insert(last.pos);
         if last.pos == g.elf.pos {
             continue;
@@ -296,15 +294,9 @@ pub fn part2(g: &Grid) -> usize {
         let Some(edges) = edges_to.get(&last) else {
             continue;
         };
-        let mut opts = edges.iter();
-        let first = opts.by_ref().next().unwrap();
-        for other in opts.by_ref() {
-            let mut c = path.clone();
-            c.push(*other);
-            paths.push(c);
+        for other in edges.iter() {
+            heads.push(*other);
         }
-        path.push(*first);
-        paths.push(path);
     }
     seen.len()
 }
