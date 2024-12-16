@@ -1,7 +1,7 @@
 use nalgebra::Point2;
-use std::collections::{HashSet, HashMap, BinaryHeap, VecDeque};
-use std::ops::Add;
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::ops::Add;
 
 use std::fmt;
 
@@ -85,7 +85,7 @@ struct Elf {
 pub struct Grid {
     elf: Elf,
     end: Pos,
-    tiles: Vec<Vec<Tile>>
+    tiles: Vec<Vec<Tile>>,
 }
 
 impl fmt::Debug for Grid {
@@ -94,7 +94,7 @@ impl fmt::Debug for Grid {
             for (x, c) in row.iter().enumerate() {
                 if y == self.end.coords.y && x == self.end.coords.x {
                     write!(f, "E")?;
-                }else if y == self.elf.pos.coords.y && x == self.elf.pos.coords.x {
+                } else if y == self.elf.pos.coords.y && x == self.elf.pos.coords.x {
                     write!(f, "{:?}", self.elf.dir)?;
                 } else {
                     write!(f, "{c:?}")?;
@@ -128,7 +128,10 @@ pub fn parse(i: &str) -> Grid {
         for (x, c) in line.chars().enumerate() {
             match c {
                 'S' => {
-                    elf = Some(Elf{pos: Point2::new(x, y), dir: Dir::Right});
+                    elf = Some(Elf {
+                        pos: Point2::new(x, y),
+                        dir: Dir::Right,
+                    });
                     row.push(Tile::Empty);
                 }
                 'E' => {
@@ -156,17 +159,16 @@ pub fn parse(i: &str) -> Grid {
     Grid {
         tiles,
         end: end.expect("end not found"),
-        elf
+        elf,
     }
 }
 
-#[derive(Clone,Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct State {
     elf: Elf,
     cost: usize,
     from: Elf,
 }
-
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -180,20 +182,35 @@ impl PartialOrd for State {
     }
 }
 
-fn dijkstra(g: &Grid) -> Option<(usize, HashMap<(Pos, Dir), Vec<Elf>>)> {
-    let mut start = g.elf.clone();
+fn dijkstra(g: &Grid) -> Option<(usize, HashMap<Elf, Vec<Elf>>)> {
+    let start = g.elf;
     let mut heap = BinaryHeap::new();
-    let mut dist: HashMap<(Pos, Dir), usize> = Default::default();
-    let mut edgesTo: HashMap<(Pos, Dir), Vec<Elf>> = Default::default();
-    heap.push(State{elf: start, cost: 0, from: start});
-    let checkandadd = |from: Elf, pos: Pos, dir: Dir, cost: usize, heap: &mut BinaryHeap<_>, dist: &mut HashMap<_, _>| -> bool {
+    let mut dist: HashMap<Elf, usize> = Default::default();
+    let mut edges_to: HashMap<Elf, Vec<Elf>> = Default::default();
+    heap.push(State {
+        elf: start,
+        cost: 0,
+        from: start,
+    });
+    let checkandadd = |from: Elf,
+                       pos: Pos,
+                       dir: Dir,
+                       cost: usize,
+                       heap: &mut BinaryHeap<_>,
+                       dist: &mut HashMap<_, _>|
+     -> bool {
+        let newelf = Elf { pos, dir };
         if g.isempty(pos) {
-            if let Some(nc) = dist.get(&(pos, dir)) {
+            if let Some(nc) = dist.get(&newelf) {
                 if *nc <= cost {
                     return false;
                 }
             }
-            heap.push(State{elf: Elf{pos: pos, dir: dir}, cost, from: from});
+            heap.push(State {
+                elf: newelf,
+                cost,
+                from,
+            });
             true
         } else {
             false
@@ -211,20 +228,27 @@ fn dijkstra(g: &Grid) -> Option<(usize, HashMap<(Pos, Dir), Vec<Elf>>)> {
                 min = Some(cost);
             }
         }
-        if let Some(oc) = dist.get_mut(&(elf.pos, elf.dir)) {
+        if let Some(oc) = dist.get_mut(&elf) {
             if *oc <= cost {
                 if *oc == cost {
-                    edgesTo.entry((elf.pos, elf.dir)).or_default().push(from);
+                    edges_to.entry(elf).or_default().push(from);
                 }
                 continue;
-            } 
+            }
             *oc = cost;
         } else {
-            dist.insert((elf.pos, elf.dir), cost);
-            edgesTo.entry((elf.pos, elf.dir)).or_default().push(from);
+            dist.insert(elf, cost);
+            edges_to.entry(elf).or_default().push(from);
         }
 
-        checkandadd(elf, elf.pos + elf.dir, elf.dir, cost + 1, &mut heap, &mut dist);
+        checkandadd(
+            elf,
+            elf.pos + elf.dir,
+            elf.dir,
+            cost + 1,
+            &mut heap,
+            &mut dist,
+        );
         let left = elf.dir.clockwise();
         checkandadd(elf, elf.pos, left, cost + 1000, &mut heap, &mut dist);
         let right = left.reverse();
@@ -232,10 +256,7 @@ fn dijkstra(g: &Grid) -> Option<(usize, HashMap<(Pos, Dir), Vec<Elf>>)> {
         let back = elf.dir.reverse();
         checkandadd(elf, elf.pos, back, cost + 2000, &mut heap, &mut dist);
     }
-    min.map(|min| {
-        (min, edgesTo)
-    })
-
+    min.map(|min| (min, edges_to))
 }
 
 pub fn part1(g: &Grid) -> usize {
@@ -245,32 +266,44 @@ pub fn part1(g: &Grid) -> usize {
 
 pub fn part2(g: &Grid) -> usize {
     let min = dijkstra(g);
-    let edgesTo = min.expect("solution not found").1;
+    let edges_to = min.expect("solution not found").1;
     let mut paths = vec![
-        vec![(g.end, Dir::Up)],
-        vec![(g.end, Dir::Left)],
-        vec![(g.end, Dir::Down)],
-        vec![(g.end, Dir::Right)]
+        vec![Elf {
+            pos: g.end,
+            dir: Dir::Up,
+        }],
+        vec![Elf {
+            pos: g.end,
+            dir: Dir::Left,
+        }],
+        vec![Elf {
+            pos: g.end,
+            dir: Dir::Down,
+        }],
+        vec![Elf {
+            pos: g.end,
+            dir: Dir::Right,
+        }],
     ];
 
     let mut seen: HashSet<Pos> = Default::default();
     while let Some(mut path) = paths.pop() {
-        let last = path[path.len()-1];
-        seen.insert(last.0);
-        if last.0 == g.elf.pos {
+        let last = path[path.len() - 1];
+        seen.insert(last.pos);
+        if last.pos == g.elf.pos {
             continue;
         }
-        let Some(edges) = edgesTo.get(&last) else {
+        let Some(edges) = edges_to.get(&last) else {
             continue;
         };
         let mut opts = edges.iter();
         let first = opts.by_ref().next().unwrap();
         for other in opts.by_ref() {
             let mut c = path.clone();
-            c.push((other.pos, other.dir));
+            c.push(*other);
             paths.push(c);
         }
-        path.push((first.pos, first.dir));
+        path.push(*first);
         paths.push(path);
     }
     seen.len()
