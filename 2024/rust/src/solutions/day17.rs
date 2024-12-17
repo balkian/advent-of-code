@@ -152,10 +152,36 @@ pub fn part1(i: &Computer) -> String {
             outs.push(out);
         }
     }
-    dbg!(&pc);
     outs.join(",")
 }
 
-pub fn part2(i: &Computer) -> usize {
-    todo!();
+/// I did some manual analysis of the code, and MY program is a loop
+/// that updates the B and C registers based on the previous value of A
+/// and sets A to A / 8.
+/// Then, it prints the value of C % 8 until A == 0.
+/// This solution works from the last state and keeps track of any possible
+/// remainder that would satisfy the output.
+pub fn part2(pc: &Computer) -> u64 {
+    let mut opts = vec![0u64];
+    for Word(res) in pc.program.iter().rev() {
+        let mut newopts = vec![];
+        for opt in opts {
+            for rem in 0..8 {
+                let a = opt * 8 + rem;
+                let b = (a % 8) ^ ( a / 2u64.pow(((a % 8) ^ 5) as u32)) ^ 3;
+                if (b % 8) == *res {
+                    newopts.push(a);
+                }
+            }
+        }
+        opts = newopts;
+    }
+    let sol = opts.into_iter().min().expect("no solution found");
+
+    let mut nc = pc.clone();
+    nc.regs.a = sol as i64;
+    let out = part1(&nc);
+    let expected = pc.program.iter().map(|Word(r)| format!("{r}")).collect::<Vec<String>>().join(",");
+    assert_eq!(expected, out);
+    sol
 }
