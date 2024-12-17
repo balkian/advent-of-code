@@ -2,13 +2,10 @@ use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::i64 as ni64;
 use nom::character::complete::u64 as nu64;
-use nom::character::complete::{alpha1, line_ending, multispace1, space1};
+use nom::character::complete::{line_ending, multispace1};
 use nom::multi::separated_list1;
-use nom::sequence::delimited;
 use nom::sequence::{preceded, separated_pair, terminated};
 use nom::{IResult, Parser};
-
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Word(u64);
@@ -28,11 +25,6 @@ pub struct Computer {
 }
 
 impl Computer {
-    ///Combo operands 0 through 3 represent literal values 0 through 3.
-    ///Combo operand 4 represents the value of register A.
-    ///Combo operand 5 represents the value of register B.
-    ///Combo operand 6 represents the value of register C.
-    ///Combo operand 7 is reserved and will not appear in valid programs.
     fn combo(&self, pos: usize) -> i64 {
         let c = self.program[pos].0;
         match c {
@@ -73,7 +65,7 @@ impl Computer {
             }
             //bxl
             1 => {
-                self.regs.b = self.regs.b ^ self.literal(pos + 1);
+                self.regs.b ^= self.literal(pos + 1);
             }
             // bst
             2 => {
@@ -88,7 +80,7 @@ impl Computer {
             }
             //bxc
             4 => {
-                self.regs.b = self.regs.b ^ self.regs.c;
+                self.regs.b ^= self.regs.c;
                 self.literal(pos + 1);
             }
             //out
@@ -152,16 +144,13 @@ pub fn computer(mut i: &str) -> IResult<&str, Computer> {
         i = ni;
     }
     let (i, _) = multispace1(i)?;
-    let (i, program) = preceded(
-        tag("Program: "),
-        separated_list1(tag(","), nu64.map(|nu| Word(nu))),
-    )(i)?;
+    let (i, program) = preceded(tag("Program: "), separated_list1(tag(","), nu64.map(Word)))(i)?;
     let (i, _) = multispace1(i)?;
     assert!(i.is_empty());
     Ok((
         i,
         Computer {
-            program: program,
+            program,
             ptr: 0,
             regs,
         },
