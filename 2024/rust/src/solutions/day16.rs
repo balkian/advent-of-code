@@ -270,7 +270,8 @@ pub fn part2(g: &Grid) -> usize {
     let mut heads = vec![
         Elf {
             pos: g.end,
-            dir: Dir::Up},
+            dir: Dir::Up,
+        },
         Elf {
             pos: g.end,
             dir: Dir::Left,
