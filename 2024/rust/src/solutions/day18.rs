@@ -32,10 +32,10 @@ fn exit_until(bytes: usize, i: &[Pos]) -> Option<usize> {
         if dists[pos.0][pos.1].is_some() {
             continue;
         }
-        dists[pos.0][pos.1] = Some(cost);
         if target == pos {
             return Some(cost);
         }
+        dists[pos.0][pos.1] = Some(cost);
         if (1..SIZE).contains(&pos.0) {
             heap.push(Reverse((cost+1, (pos.0 - 1, pos.1))));
         }
@@ -57,10 +57,43 @@ pub fn part1(i: &[Pos]) -> usize {
 }
 
 pub fn part2(i: &[Pos]) -> String {
-    for (ix, block) in i.iter().enumerate().skip(1024) {
-        if exit_until(ix+1, i).is_none() {
-            return format!("{},{}", block.0, block.1);
+    let mut dists = [[None; SIZE]; SIZE];
+    let mut weights = [[None; SIZE]; SIZE];
+
+    for (ix, pos) in i.iter().enumerate() {
+        weights[pos.0][pos.1] = Some(ix);
+    }
+
+    let mut heap = BinaryHeap::new();
+    let target = (0, 0);
+    heap.push((dists[SIZE-1][SIZE-1].unwrap_or(i.len()), (SIZE-1, SIZE-1)));
+    while let Some((cost, pos)) = heap.pop() {
+        if target == pos {
+            let (x, y) = i[cost];
+            return format!("{x},{y}");
+        }
+        if dists[pos.0][pos.1].is_some() {
+            continue;
+        }
+        dists[pos.0][pos.1] = Some(cost);
+
+        let mut opts = vec![];
+        if (1..SIZE).contains(&pos.0) {
+            opts.push((pos.0 - 1, pos.1));
+        }
+        if (1..SIZE).contains(&pos.1) {
+            opts.push((pos.0, pos.1 - 1));
+        }
+        if (0..SIZE-1).contains(&pos.0) {
+            opts.push((pos.0 + 1, pos.1));
+        }
+        if (0..SIZE-1).contains(&pos.1) {
+            opts.push((pos.0, pos.1 + 1));
+        }
+        for opt in opts {
+            let ncost = cost.min(weights[opt.0][opt.1].unwrap_or(cost));
+            heap.push((ncost, opt));
         }
     }
-    panic!("no solution found");
+    panic!("solution not found");
 }
