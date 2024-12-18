@@ -23,18 +23,22 @@ pub fn parse(i: &str) -> Vec<Pos> {
 }
 
 const SIZE: usize = 71;
+const EXIT: (usize, usize) = (SIZE - 1, SIZE - 1);
+const START: (usize, usize) = (0, 0);
 
-fn exit_until(bytes: usize, i: &[Pos]) -> Option<usize> {
+/// We use Dijkstra to find an optimal path between
+/// START and EXIT.
+pub fn part1(i: &[Pos]) -> usize {
     let mut dists = [[None; SIZE]; SIZE];
     let mut blocked = [[false; SIZE]; SIZE];
 
-    for pos in i.iter().take(bytes) {
+    for pos in i.iter().take(1024) {
         blocked[pos.0][pos.1] = true;
     }
 
     let mut heap = BinaryHeap::new();
-    let target = (SIZE - 1, SIZE - 1);
-    heap.push(Reverse((0, (0, 0))));
+    let target = EXIT;
+    heap.push(Reverse((0, START)));
     while let Some(Reverse((cost, pos))) = heap.pop() {
         if blocked[pos.0][pos.1] {
             continue;
@@ -43,7 +47,7 @@ fn exit_until(bytes: usize, i: &[Pos]) -> Option<usize> {
             continue;
         }
         if target == pos {
-            return Some(cost);
+            return cost;
         }
         dists[pos.0][pos.1] = Some(cost);
         if (1..SIZE).contains(&pos.0) {
@@ -59,13 +63,15 @@ fn exit_until(bytes: usize, i: &[Pos]) -> Option<usize> {
             heap.push(Reverse((cost + 1, (pos.0, pos.1 + 1))));
         }
     }
-    None
+    panic!("no solution found")
 }
 
-pub fn part1(i: &[Pos]) -> usize {
-    exit_until(1024, i).expect("no solution found")
-}
-
+/// This problem can be stated as finding the path from START to EXIT that would
+/// last the longest.
+///
+/// We use a modified version of Dijkstra, where the cost of a path is the minimum
+/// number of bytes that need to fall before the path is no longer possible. We also 
+/// use a MaxHeap to prioritize paths that would last the longest.
 pub fn part2(i: &[Pos]) -> String {
     let mut dists = [[None; SIZE]; SIZE];
     let mut weights = [[None; SIZE]; SIZE];
@@ -75,10 +81,10 @@ pub fn part2(i: &[Pos]) -> String {
     }
 
     let mut heap = BinaryHeap::new();
-    let target = (0, 0);
+    let target = EXIT;
     heap.push((
-        dists[SIZE - 1][SIZE - 1].unwrap_or(i.len()),
-        (SIZE - 1, SIZE - 1),
+        dists[START.0][START.1].unwrap_or(i.len()),
+        START,
     ));
     while let Some((cost, pos)) = heap.pop() {
         if target == pos {
