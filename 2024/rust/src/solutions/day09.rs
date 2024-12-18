@@ -1,7 +1,7 @@
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum Byte {
     Empty(usize),
-    Occupied{size: usize, id: usize},
+    Occupied { size: usize, id: usize },
 }
 
 type Input = Vec<Byte>;
@@ -13,7 +13,7 @@ pub fn parse(i: &str) -> Input {
     for c in i.trim().chars() {
         let n = c.to_digit(10).expect("could not convert number") as usize;
         if occupied {
-            res.push(Byte::Occupied{size: n, id});
+            res.push(Byte::Occupied { size: n, id });
             id += 1;
         } else {
             res.push(Byte::Empty(n));
@@ -26,36 +26,39 @@ pub fn parse(i: &str) -> Input {
 pub fn part1(i: &Input) -> usize {
     let mut i = i.clone();
     let mut left = 0;
-    let mut right = i.len() - 1; 
+    let mut right = i.len() - 1;
     while left < right {
         match (&i[left], &i[right]) {
-            (Byte::Occupied{..}, _) => {
+            (Byte::Occupied { .. }, _) => {
                 left += 1;
-            },
+            }
             (_, Byte::Empty(_)) => {
                 right -= 1;
-            },
-            (Byte::Empty(free), Byte::Occupied{size, id: _}) if free > size => {
-                    let size = *size;
-                    let free = *free;
-                    i[left] = Byte::Empty(free - size);
-                    let r = i.remove(right);
-                    i.insert(left, r);
-                    //right -= 1; There has been an insert one insert earlier
-                    left += 1;
-            },
-            (Byte::Empty(free), Byte::Occupied{size, id: _}) if free == size => {
-                    i[left] = i.remove(right);
-                    right -= 1;
-                    left += 1;
-            },
-            (Byte::Empty(free), Byte::Occupied{size, id}) => {
-                    let free = *free;
-                    let size = *size;
-                    let id = *id;
-                    i[left] = Byte::Occupied{size: free, id};
-                    i[right] = Byte::Occupied{size: size - free, id};
-                    left += 1;
+            }
+            (Byte::Empty(free), Byte::Occupied { size, id: _ }) if free > size => {
+                let size = *size;
+                let free = *free;
+                i[left] = Byte::Empty(free - size);
+                let r = i.remove(right);
+                i.insert(left, r);
+                //right -= 1; There has been an insert one insert earlier
+                left += 1;
+            }
+            (Byte::Empty(free), Byte::Occupied { size, id: _ }) if free == size => {
+                i[left] = i.remove(right);
+                right -= 1;
+                left += 1;
+            }
+            (Byte::Empty(free), Byte::Occupied { size, id }) => {
+                let free = *free;
+                let size = *size;
+                let id = *id;
+                i[left] = Byte::Occupied { size: free, id };
+                i[right] = Byte::Occupied {
+                    size: size - free,
+                    id,
+                };
+                left += 1;
             }
         }
     }
@@ -65,13 +68,13 @@ pub fn part1(i: &Input) -> usize {
         match block {
             Byte::Empty(free) => {
                 pos += free;
-            },
-            Byte::Occupied{size, id} => {
+            }
+            Byte::Occupied { size, id } => {
                 for _ in 0..size {
                     total += pos * id;
                     pos += 1;
                 }
-            },
+            }
         }
     }
     total
@@ -80,9 +83,9 @@ pub fn part1(i: &Input) -> usize {
 #[allow(clippy::mut_range_bound)]
 pub fn part2(i: &Input) -> usize {
     let mut i = i.clone();
-    let mut right = i.len() - 1; 
+    let mut right = i.len() - 1;
     while right > 0 {
-        let Byte::Occupied{size, id: _} = &i[right] else {
+        let Byte::Occupied { size, id: _ } = &i[right] else {
             right -= 1;
             continue;
         };
@@ -91,18 +94,18 @@ pub fn part2(i: &Input) -> usize {
                 Byte::Empty(free) if free == size => {
                     i.swap(left, right);
                     break;
-                },
+                }
                 Byte::Empty(free) if free > size => {
                     let size = *size;
-                    i.insert(left+1, Byte::Empty(free - size));
+                    i.insert(left + 1, Byte::Empty(free - size));
                     right += 1;
                     i[left] = Byte::Empty(size);
                     i.swap(left, right);
                     break;
-                },
+                }
                 _ => {
                     continue;
-                },
+                }
             }
         }
         right -= 1;
@@ -113,13 +116,13 @@ pub fn part2(i: &Input) -> usize {
         match block {
             Byte::Empty(free) => {
                 pos += free;
-            },
-            Byte::Occupied{size, id} => {
+            }
+            Byte::Occupied { size, id } => {
                 for _ in 0..size {
                     total += pos * id;
                     pos += 1;
                 }
-            },
+            }
         }
     }
     total

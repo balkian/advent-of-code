@@ -4,12 +4,22 @@ use std::collections::BinaryHeap;
 type Pos = (usize, usize);
 
 pub fn parse(i: &str) -> Vec<Pos> {
-    i.lines().filter(|line| !line.is_empty())
+    i.lines()
+        .filter(|line| !line.is_empty())
         .map(|line| {
             let mut toks = line.trim().split(",");
-            (toks.next().expect("failed to get first number").parse().expect("first number not a valid number"),
-            toks.next().expect("failed to get second number").parse().expect("first number not a valid number"))
-        }).collect()
+            (
+                toks.next()
+                    .expect("failed to get first number")
+                    .parse()
+                    .expect("first number not a valid number"),
+                toks.next()
+                    .expect("failed to get second number")
+                    .parse()
+                    .expect("first number not a valid number"),
+            )
+        })
+        .collect()
 }
 
 const SIZE: usize = 71;
@@ -23,7 +33,7 @@ fn exit_until(bytes: usize, i: &[Pos]) -> Option<usize> {
     }
 
     let mut heap = BinaryHeap::new();
-    let target = (SIZE-1, SIZE-1);
+    let target = (SIZE - 1, SIZE - 1);
     heap.push(Reverse((0, (0, 0))));
     while let Some(Reverse((cost, pos))) = heap.pop() {
         if blocked[pos.0][pos.1] {
@@ -37,16 +47,16 @@ fn exit_until(bytes: usize, i: &[Pos]) -> Option<usize> {
         }
         dists[pos.0][pos.1] = Some(cost);
         if (1..SIZE).contains(&pos.0) {
-            heap.push(Reverse((cost+1, (pos.0 - 1, pos.1))));
+            heap.push(Reverse((cost + 1, (pos.0 - 1, pos.1))));
         }
         if (1..SIZE).contains(&pos.1) {
-            heap.push(Reverse((cost+1, (pos.0, pos.1 - 1))));
+            heap.push(Reverse((cost + 1, (pos.0, pos.1 - 1))));
         }
-        if (0..SIZE-1).contains(&pos.0) {
-            heap.push(Reverse((cost+1, (pos.0 + 1, pos.1))));
+        if (0..SIZE - 1).contains(&pos.0) {
+            heap.push(Reverse((cost + 1, (pos.0 + 1, pos.1))));
         }
-        if (0..SIZE-1).contains(&pos.1) {
-            heap.push(Reverse((cost+1, (pos.0, pos.1 + 1))));
+        if (0..SIZE - 1).contains(&pos.1) {
+            heap.push(Reverse((cost + 1, (pos.0, pos.1 + 1))));
         }
     }
     None
@@ -66,7 +76,10 @@ pub fn part2(i: &[Pos]) -> String {
 
     let mut heap = BinaryHeap::new();
     let target = (0, 0);
-    heap.push((dists[SIZE-1][SIZE-1].unwrap_or(i.len()), (SIZE-1, SIZE-1)));
+    heap.push((
+        dists[SIZE - 1][SIZE - 1].unwrap_or(i.len()),
+        (SIZE - 1, SIZE - 1),
+    ));
     while let Some((cost, pos)) = heap.pop() {
         if target == pos {
             let (x, y) = i[cost];
@@ -84,10 +97,10 @@ pub fn part2(i: &[Pos]) -> String {
         if (1..SIZE).contains(&pos.1) {
             opts.push((pos.0, pos.1 - 1));
         }
-        if (0..SIZE-1).contains(&pos.0) {
+        if (0..SIZE - 1).contains(&pos.0) {
             opts.push((pos.0 + 1, pos.1));
         }
-        if (0..SIZE-1).contains(&pos.1) {
+        if (0..SIZE - 1).contains(&pos.1) {
             opts.push((pos.0, pos.1 + 1));
         }
         for opt in opts {

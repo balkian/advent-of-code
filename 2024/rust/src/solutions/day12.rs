@@ -48,7 +48,7 @@ fn regions_area(input: &Input) -> (Vec<Vec<usize>>, HashMap<usize, usize>) {
 
 /// Check whether the content of two elements in a grid are different.
 /// The positions are determined by a valid position and the offset of the other position.
-/// An element outside of the grid is always different 
+/// An element outside of the grid is always different
 fn changes<T: Eq>(grid: &[Vec<T>], (i, j): (usize, usize), (di, dj): (isize, isize)) -> bool {
     let (pi, underi) = i.overflowing_add_signed(di);
     let (pj, underj) = j.overflowing_add_signed(dj);
