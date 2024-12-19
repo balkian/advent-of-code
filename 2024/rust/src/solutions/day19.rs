@@ -17,7 +17,7 @@ pub fn parse(i: &str) -> Problem {
         .collect();
     lines.by_ref().next();
     let mut towels = vec![];
-    while let Some(towel) = lines.next() {
+    for towel in lines {
         towels.push(towel.trim().to_string());
     }
     Problem { tokens, towels }
@@ -35,7 +35,7 @@ pub fn matches(i: &str, tokens: &[String]) -> bool {
             }
         }
     }
-    return false;
+    false
 }
 
 pub fn count_matches<'a: 'b, 'b>(
@@ -57,7 +57,7 @@ pub fn count_matches<'a: 'b, 'b>(
         }
     }
     cache.insert(i, found);
-    return found;
+    found
 }
 
 pub fn part1(p: &Problem) -> usize {
