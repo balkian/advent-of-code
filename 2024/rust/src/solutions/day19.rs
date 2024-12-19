@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Problem {
     tokens: Vec<String>,
     towels: Vec<String>,
@@ -8,13 +8,19 @@ pub struct Problem {
 
 pub fn parse(i: &str) -> Problem {
     let mut lines = i.lines();
-    let tokens = lines.next().expect("cannot find").trim().split(", ").map(|s| s.to_string()).collect();
+    let tokens = lines
+        .next()
+        .expect("cannot find")
+        .trim()
+        .split(", ")
+        .map(|s| s.to_string())
+        .collect();
     lines.by_ref().next();
     let mut towels = vec![];
     while let Some(towel) = lines.next() {
         towels.push(towel.trim().to_string());
     }
-    Problem{tokens, towels}
+    Problem { tokens, towels }
 }
 
 pub fn matches(i: &str, tokens: &[String]) -> bool {
@@ -32,7 +38,11 @@ pub fn matches(i: &str, tokens: &[String]) -> bool {
     return false;
 }
 
-pub fn count_matches<'a: 'b, 'b>(i: &'a str, tokens: &[String], cache: &'b mut HashMap<&'a str, usize>) -> usize {
+pub fn count_matches<'a: 'b, 'b>(
+    i: &'a str,
+    tokens: &[String],
+    cache: &'b mut HashMap<&'a str, usize>,
+) -> usize {
     if i.is_empty() {
         return 1;
     }

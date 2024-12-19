@@ -70,7 +70,7 @@ pub fn part1(i: &[Pos]) -> usize {
 /// last the longest.
 ///
 /// We use a modified version of Dijkstra, where the cost of a path is the minimum
-/// number of bytes that need to fall before the path is no longer possible. We also 
+/// number of bytes that need to fall before the path is no longer possible. We also
 /// use a MaxHeap to prioritize paths that would last the longest.
 pub fn part2(i: &[Pos]) -> String {
     let mut dists = [[None; SIZE]; SIZE];
@@ -82,10 +82,7 @@ pub fn part2(i: &[Pos]) -> String {
 
     let mut heap = BinaryHeap::new();
     let target = EXIT;
-    heap.push((
-        dists[START.0][START.1].unwrap_or(i.len()),
-        START,
-    ));
+    heap.push((dists[START.0][START.1].unwrap_or(i.len()), START));
     while let Some((cost, pos)) = heap.pop() {
         if target == pos {
             let (x, y) = i[cost];
