@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{VecDeque, HashMap};
 
 pub fn parse(i: &str) -> Vec<usize> {
     i.lines().filter(|line| !line.is_empty()).map(|line| line.parse::<usize>().expect("could not parse number")).collect()
@@ -34,26 +34,29 @@ pub fn part2(i: &[usize]) -> usize {
 
     }
     values.iter_mut().for_each(|vt| vt.iter_mut().for_each(|v| *v = *v % 10));
-    let mut diffs = vec![vec![]; 2000];
-    for i in 0..2000 {
-        diffs[i] = values[i + 1].iter().zip(values[i].iter()).map(|(a, b)| (*a as isize) - (*b as isize)).collect();
+
+    let mut seen: HashMap<VecDeque<isize>, HashMap<usize, usize>> = Default::default();
+    let mut windows: Vec<VecDeque<isize>> = Default::default();
+    for _ in 0..i.len() {
+        windows.push(VecDeque::from(vec![0]));
 
     }
+    for t in 0..3 {
+        for (j, w) in windows.iter_mut().enumerate() {
+            w.push_back((values[t+1][j] as isize) - (values[t][j] as isize));
+        }
+    }
 
-    let mut seen: HashMap<Vec<isize>, HashMap<usize, usize>> = Default::default();
-    for t in 4..2000 {
-        for j in 0..i.len() {
-            let k = vec![
-                diffs[t-3][j], 
-                diffs[t-2][j], 
-                diffs[t-1][j], 
-                diffs[t][j]
-            ];
-            seen.entry(k)
+    for t in 3..2000 {
+        for (j, w) in windows.iter_mut().enumerate() {
+            w.pop_front();
+            w.push_back((values[t+1][j] as isize) - (values[t][j] as isize));
+
+            seen.entry(w.clone())
                 .or_default()
                 .entry(j)
                 .or_insert(values[t+1][j]);
         }
     }
-    seen.iter().map(|(k, v)| v.iter().map(|(_j, v)| v).sum::<usize>()).max().expect("there should be a maximum")
+    seen.values().map(|v| v.iter().map(|(_j, v)| v).sum::<usize>()).max().expect("there should be a maximum")
 }
