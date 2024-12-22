@@ -16,7 +16,7 @@ enum Dir {
 const INVALID: char = '@';
 
 impl Dir {
-    fn to_char(&self) -> char {
+    fn as_char(&self) -> char {
         match self {
             Dir::Up => '^',
             Dir::Down => 'v',
@@ -83,7 +83,7 @@ impl<const M: usize, const N: usize> Robot<M,N> {
 impl<const M: usize, const N: usize> Robot<M, N> {
     fn press(&self, button: Button, pos: &mut Pos) -> Vec<Vec<Button>> {
         // Identify where to move next
-        let mut heads = vec![(pos.clone(), vec![])];
+        let mut heads = vec![(*pos, vec![])];
         let target = *self.coordinates.get(&button).expect("that button is not available");
         let mut paths = vec![];
         while let Some((pos, path)) = heads.pop() {
@@ -95,41 +95,41 @@ impl<const M: usize, const N: usize> Robot<M, N> {
                 continue;
             }
             if target.1 > pos.1 {
-                let mut pos = pos.clone();
+                let mut pos = pos;
                 let dir = Dir::Right;
                 let mut newhead = path.clone();
                 while target.1 > pos.1 {
-                    newhead.push(dir.to_char());
+                    newhead.push(dir.as_char());
                     pos = dir.add(pos);
                 }
                 heads.push((pos, newhead));
             }
             if target.1 < pos.1 {
-                let mut pos = pos.clone();
+                let mut pos = pos;
                 let dir = Dir::Left;
                 let mut newhead = path.clone();
                 while target.1 < pos.1 {
-                    newhead.push(dir.to_char());
+                    newhead.push(dir.as_char());
                     pos = dir.add(pos);
                 }
                 heads.push((pos, newhead));
             }
             if target.0 < pos.0 {
-                let mut pos = pos.clone();
+                let mut pos = pos;
                 let dir = Dir::Up;
                 let mut newhead = path.clone();
                 while target.0 < pos.0 {
-                    newhead.push(dir.to_char());
+                    newhead.push(dir.as_char());
                     pos = dir.add(pos);
                 }
                 heads.push((pos, newhead));
             }
             if target.0 > pos.0 {
-                let mut pos = pos.clone();
+                let mut pos = pos;
                 let dir = Dir::Down;
                 let mut newhead = path.clone();
                 while target.0 > pos.0 {
-                    newhead.push(dir.to_char());
+                    newhead.push(dir.as_char());
                     pos = dir.add(pos);
                 }
                 heads.push((pos, newhead));
@@ -138,38 +138,12 @@ impl<const M: usize, const N: usize> Robot<M, N> {
         }
         *pos = target;
         for path in paths.iter_mut() {
-            path.push(Dir::Accept.to_char());
+            path.push(Dir::Accept.as_char());
         }
         //println!("Robot {} pressed {}", self.name, self.pad[self.pos.0][self.pos.1]);
         paths
     }
 }
-
-
-//#[derive(Debug)]
-//struct ControllerRobot<const M: usize, const N: usize>(Robot<M,N>);
-//
-//trait Controller: std::fmt::Debug {
-//    fn get_dir(&mut self, dir: Dir);
-//}
-//
-//impl<const M: usize, const N: usize> Controller for ControllerRobot<M,N> {
-//    fn get_dir(&mut self, dir: Dir) {
-//        self.0.press(dir.to_char());
-//    }
-//}
-
-//#[derive(Debug)]
-//struct LogController {
-//    history: Rc<RefCell<String>>,
-//}
-
-//impl Controller for LogController {
-//    fn get_dir(&mut self, dir: Dir) {
-//        println!("You pressed {}", dir.to_char());
-//        self.history.borrow_mut().push(dir.to_char());
-//    }
-//}
 
 
 type Codes = Vec<Vec<Button>>;
@@ -206,14 +180,10 @@ fn expand_history(history: &mut Vec<Vec<Button>>) {
         }
     }
 
-    *history = newalts.into_iter().filter_map(|(c, p)| (c == mincost).then(|| p)).collect();
+    *history = newalts.into_iter().filter_map(|(c, p)| (c == mincost).then_some(p)).collect();
 }
 
 pub fn part1(i: &Codes) -> usize {
-    //let history = Rc::new(RefCell::new(String::new()));
-    //let logger = LogController{history: history.clone()};
-    //let first = Robot::new(String::from("first"), DIRECTIONPAD, logger);
-    //let second = Robot::new(String::from("second"), DIRECTIONPAD, ControllerRobot(first));
     let mut total_complexity = 0;
     let pad = Robot::new(&NUMBERPAD);
     for code in i {
@@ -280,10 +250,6 @@ fn conquer<const M: usize, const N: usize>(code: &[Button], robot: &Robot<M,N>, 
 }
 
 pub fn part2(i: &Codes) -> usize {
-    //let history = Rc::new(RefCell::new(String::new()));
-    //let logger = LogController{history: history.clone()};
-    //let first = Robot::new(String::from("first"), DIRECTIONPAD, logger);
-    //let second = Robot::new(String::from("second"), DIRECTIONPAD, ControllerRobot(first));
     let mut total_complexity = 0;
     let door = Robot::new(&NUMBERPAD);
     let first = Robot::new(&DIRECTIONPAD);
@@ -317,10 +283,6 @@ pub fn part2(i: &Codes) -> usize {
 
         let complexity = code_str[..3].parse::<usize>().expect("cannot read number from code") * min ;
 
-        //let least = history.into_iter().min_by_key(|h| h.len()).expect("at least one should be available");
-
-        //let complexity = code_str[..3].parse::<usize>().expect("cannot read number from code") * least.len();
-        //println!("{}: {}. Complexity: {complexity}", code_str, "nothing");
         total_complexity += complexity;
     }
     total_complexity
