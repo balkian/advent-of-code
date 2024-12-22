@@ -36,7 +36,6 @@ impl Dir {
     }
 }
 
-
 const NUMBERPAD: [[char; 3]; 4] = [
     ['7', '8', '9'],
     ['4', '5', '6'],
@@ -44,10 +43,7 @@ const NUMBERPAD: [[char; 3]; 4] = [
     [INVALID, '0', 'A'],
 ];
 
-const DIRECTIONPAD: [[char; 3]; 2] = [
-    [INVALID, '^', 'A'],
-    ['<', 'v', '>'],
-];
+const DIRECTIONPAD: [[char; 3]; 2] = [[INVALID, '^', 'A'], ['<', 'v', '>']];
 
 fn cost(b: Button) -> usize {
     match b {
@@ -66,7 +62,7 @@ struct Robot<const M: usize, const N: usize> {
     coordinates: HashMap<Button, Pos>,
 }
 
-impl<const M: usize, const N: usize> Robot<M,N> {
+impl<const M: usize, const N: usize> Robot<M, N> {
     fn new(pad: &'static [[char; N]; M]) -> Self {
         let mut coordinates: HashMap<Button, Pos> = Default::default();
         for (m, row) in pad.iter().enumerate() {
@@ -75,16 +71,22 @@ impl<const M: usize, const N: usize> Robot<M,N> {
             }
         }
         let initial_pos = *coordinates.get(&'A').expect("button <A> not found");
-        Robot{pad, initial_pos, coordinates}
+        Robot {
+            pad,
+            initial_pos,
+            coordinates,
+        }
     }
-
 }
 
 impl<const M: usize, const N: usize> Robot<M, N> {
     fn press(&self, button: Button, pos: &mut Pos) -> Vec<Vec<Button>> {
         // Identify where to move next
         let mut heads = vec![(*pos, vec![])];
-        let target = *self.coordinates.get(&button).expect("that button is not available");
+        let target = *self
+            .coordinates
+            .get(&button)
+            .expect("that button is not available");
         let mut paths = vec![];
         while let Some((pos, path)) = heads.pop() {
             if pos == target {
@@ -134,7 +136,6 @@ impl<const M: usize, const N: usize> Robot<M, N> {
                 }
                 heads.push((pos, newhead));
             }
-
         }
         *pos = target;
         for path in paths.iter_mut() {
@@ -145,14 +146,13 @@ impl<const M: usize, const N: usize> Robot<M, N> {
     }
 }
 
-
 type Codes = Vec<Vec<Button>>;
 
 pub fn parse(i: &str) -> Codes {
-    i.lines().map(|line| line.trim().chars().collect()).collect()
+    i.lines()
+        .map(|line| line.trim().chars().collect())
+        .collect()
 }
-
-
 
 fn expand_history(history: &mut Vec<Vec<Button>>) {
     let first = Robot::new(&DIRECTIONPAD);
@@ -180,7 +180,10 @@ fn expand_history(history: &mut Vec<Vec<Button>>) {
         }
     }
 
-    *history = newalts.into_iter().filter_map(|(c, p)| (c == mincost).then_some(p)).collect();
+    *history = newalts
+        .into_iter()
+        .filter_map(|(c, p)| (c == mincost).then_some(p))
+        .collect();
 }
 
 pub fn part1(i: &Codes) -> usize {
@@ -212,17 +215,27 @@ pub fn part1(i: &Codes) -> usize {
         expand_history(&mut history);
         expand_history(&mut history);
 
-
-        let least = history.into_iter().min_by_key(|h| h.len()).expect("at least one should be available");
+        let least = history
+            .into_iter()
+            .min_by_key(|h| h.len())
+            .expect("at least one should be available");
 
         let code_str: String = code.iter().collect();
-        let complexity = code_str[..3].parse::<usize>().expect("cannot read number from code") * least.len();
+        let complexity = code_str[..3]
+            .parse::<usize>()
+            .expect("cannot read number from code")
+            * least.len();
         total_complexity += complexity;
     }
     total_complexity
 }
 
-fn conquer<const M: usize, const N: usize>(code: &[Button], robot: &Robot<M,N>, level: usize, memo: &mut HashMap<(String, usize), usize>) -> usize {
+fn conquer<const M: usize, const N: usize>(
+    code: &[Button],
+    robot: &Robot<M, N>,
+    level: usize,
+    memo: &mut HashMap<(String, usize), usize>,
+) -> usize {
     if code.is_empty() {
         return 0;
     }
@@ -246,7 +259,6 @@ fn conquer<const M: usize, const N: usize>(code: &[Button], robot: &Robot<M,N>, 
     }
     memo.insert(key, total);
     total
-    
 }
 
 pub fn part2(i: &Codes) -> usize {
@@ -281,7 +293,10 @@ pub fn part2(i: &Codes) -> usize {
         }
         let code_str: String = code.iter().collect();
 
-        let complexity = code_str[..3].parse::<usize>().expect("cannot read number from code") * min ;
+        let complexity = code_str[..3]
+            .parse::<usize>()
+            .expect("cannot read number from code")
+            * min;
 
         total_complexity += complexity;
     }
