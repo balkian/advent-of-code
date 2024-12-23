@@ -23,7 +23,7 @@ pub fn section<T>(timeit: bool, title: &str, code: impl FnOnce() -> T) -> T {
             elapsed /= 1000f64;
         }
 
-        print!(" Took: {:.0} {}", elapsed, unit);
+        print!(" Took: {:.2} {}", elapsed, unit);
     }
     println!();
     res
