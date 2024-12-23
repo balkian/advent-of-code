@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
 pub fn parse(i: &str) -> Vec<usize> {
     i.lines()
@@ -31,35 +31,27 @@ pub fn part1(i: &[usize]) -> usize {
 }
 
 pub fn part2(i: &[usize]) -> usize {
-    let mut values = vec![vec![]; 2001];
-    values[0] = i.to_vec();
-    for i in 1..=2000 {
-        values[i] = values[i - 1].iter().map(|v| evolve(*v)).collect();
-    }
-    values
-        .iter_mut()
-        .for_each(|vt| vt.iter_mut().for_each(|v| *v %= 10));
-
-    let mut seen: HashMap<VecDeque<isize>, HashMap<usize, usize>> = Default::default();
-    let mut windows: Vec<VecDeque<isize>> = Default::default();
-    for _ in 0..i.len() {
-        windows.push(VecDeque::from(vec![0]));
-    }
-    for t in 0..3 {
-        for (j, w) in windows.iter_mut().enumerate() {
-            w.push_back((values[t + 1][j] as isize) - (values[t][j] as isize));
+    let mut seen: HashMap<[isize; 4], HashMap<usize, usize>> = HashMap::with_capacity(20 * i.len());
+    for (j, secret) in i.iter().enumerate() {
+        let mut secret = *secret;
+        let mut window = [0isize; 4];
+        let mut last_val = 0isize;
+        for t in 0..3 {
+            let new_val = (secret % 10) as isize;
+            window[t] = new_val - last_val;
+            last_val = new_val;
+            secret = evolve(secret);
         }
-    }
-
-    for t in 3..2000 {
-        for (j, w) in windows.iter_mut().enumerate() {
-            w.pop_front();
-            w.push_back((values[t + 1][j] as isize) - (values[t][j] as isize));
-
-            seen.entry(w.clone())
+        for _t in 3..=2000 {
+            let new_val = (secret % 10) as isize;
+            window[3] = new_val - last_val;
+            last_val = new_val;
+            seen.entry(window.clone())
                 .or_default()
                 .entry(j)
-                .or_insert(values[t + 1][j]);
+                .or_insert(new_val as usize);
+            secret = evolve(secret);
+            window.rotate_left(1);
         }
     }
     seen.values()
