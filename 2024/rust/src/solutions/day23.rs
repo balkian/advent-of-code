@@ -37,32 +37,35 @@ pub fn part1(g: &HashMap<&str, HashSet<&str>>) -> usize {
 
 pub fn part2(g: &HashMap<&str, HashSet<&str>>) -> String {
     //dbg!(&g);
-    let mut groups: Vec<_> = g.keys().map(|n| vec![*n]).collect();
 
     let mut candidates: Vec<&str> = g.keys().copied().collect();
     candidates.sort();
 
-    for node in candidates {
+    let mut groups: Vec<Vec<&str>> = vec![vec![candidates[0]]];
+    let mut max = 0;
+    let mut maximal = vec![];
+
+    for node in candidates.into_iter().skip(1) {
         let Some(edges) = g.get(node) else {
             continue
         };
-        let mut found = vec![];
+        let mut found = vec![vec![node]];
         'groups:
-        for group in groups.iter_mut() {
-            if node <= group[group.len()-1] {
-                continue;
-            }
-            for other in group.iter() {
-                if !edges.contains(other) {
+        for group in groups.iter() {
+            for g in group {
+                if !edges.contains(g) {
                     continue 'groups;
                 }
             }
-            let mut this = group.clone();
-            this.push(node);
-            found.push(this);
+            let mut ng = group.clone();
+            ng.push(node);
+            if ng.len() > max {
+                max = ng.len();
+                maximal = ng.clone();
+            }
+            found.push(ng);
         }
         groups.extend(found);
     }
-    let maximal = groups.into_iter().max_by_key(|g| g.len()).expect("no max found");
     maximal.join(",")
 }
