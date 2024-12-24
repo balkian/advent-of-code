@@ -157,20 +157,25 @@ pub fn part2(p: &Problem) -> usize {
             assert_eq!(pending.len(), 1);
         }
     }
-    let mut cheats: HashMap<(Pos, Pos), usize> = Default::default();
+    let mut total_cheats = 0;
     let threshold = 100;
     let dists = dists;
+    let mut pending = vec![];
+    let mut new_pending = vec![];
     for start in path {
         let mut done: HashSet<Pos> = Default::default();
-        let mut pending = vec![];
         done.insert(start);
+        pending.clear();
         for n in neighbors(start, &p.grid) {
             pending.push(n);
         }
         let start_dist =
             dists[start.1][start.0].expect("all positions in path should have a distance") + 1;
         for d in (start_dist..).take(20) {
-            let mut new_pending = vec![];
+            if pending.is_empty() {
+                break;
+            }
+            new_pending.clear();
             for o in pending.drain(..) {
                 if done.contains(&o) {
                     continue;
@@ -178,13 +183,7 @@ pub fn part2(p: &Problem) -> usize {
                 done.insert(o);
                 match dists[o.1][o.0] {
                     Some(old) if old >= d + threshold => {
-                        let diff = old - d;
-                        if let Some(oldcheat) = cheats.get(&(start, o)) {
-                            if *oldcheat > diff {
-                                panic!("this should never happen");
-                            }
-                        }
-                        cheats.insert((start, o), diff);
+                        total_cheats += 1;
                     }
                     _ => {}
                 }
@@ -192,12 +191,8 @@ pub fn part2(p: &Problem) -> usize {
                     new_pending.push(n);
                 }
             }
-            pending = new_pending;
+            std::mem::swap(&mut new_pending, &mut pending);
         }
     }
-    let mut counts: HashMap<usize, usize> = HashMap::new();
-    for (_, d) in cheats.iter() {
-        *counts.entry(*d).or_default() += 1;
-    }
-    cheats.len()
+    total_cheats
 }
