@@ -1,6 +1,6 @@
-use std::collections::{HashSet, BTreeMap};
+use std::collections::{BTreeMap, HashSet};
 
-#[derive(Debug,Clone,Copy,PartialEq,Eq,PartialOrd,Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum State<'a> {
     Value(bool),
     And(&'a str, &'a str),
@@ -8,7 +8,7 @@ enum State<'a> {
     Xor(&'a str, &'a str),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Circuit<'a> {
     states: BTreeMap<&'a str, State<'a>>,
     xs: Vec<&'a str>,
@@ -18,8 +18,10 @@ pub struct Circuit<'a> {
 
 impl<'a> Circuit<'a> {
     fn calculate(&mut self, input: &'a str) -> bool {
-        let out = match self.states.get_mut(input).expect("invalid input").clone() {
-            State::Value(b) => { return b; },
+        let out = match *self.states.get_mut(input).expect("invalid input") {
+            State::Value(b) => {
+                return b;
+            }
             State::And(a, b) => {
                 let a = self.calculate(a);
                 let b = self.calculate(b);
@@ -40,21 +42,20 @@ impl<'a> Circuit<'a> {
         out
     }
     fn bits2usize(&mut self, bits: &[&'a str]) -> usize {
-        bits.into_iter().fold(0, |acc, o| {
-            (acc << 1) + (self.calculate(o) as usize)
-        })
+        bits.iter()
+            .fold(0, |acc, o| (acc << 1) + (self.calculate(o) as usize))
     }
     fn set_x(&mut self, mut value: usize) {
         for x in self.xs.iter_mut().rev() {
             self.states.insert(x, State::Value(value % 2 == 1));
-            value = value >> 1;
+            value >>= 1;
         }
         assert_eq!(value, 0);
     }
     fn set_y(&mut self, mut value: usize) {
         for y in self.ys.iter_mut().rev() {
             self.states.insert(y, State::Value(value % 2 == 1));
-            value = value >> 1;
+            value >>= 1;
         }
         assert_eq!(value, 0);
     }
@@ -66,7 +67,7 @@ impl<'a> Circuit<'a> {
         let mut diff = vec![];
         for i in self.zs.iter().rev() {
             let val = (expected % 2) == 1;
-            expected = expected / 2;
+            expected /= 2;
             match self.states.get(i).unwrap() {
                 State::Value(v) if *v == val => {
                     continue;
@@ -80,7 +81,7 @@ impl<'a> Circuit<'a> {
     }
 }
 
-pub fn parse<'a>(i: &'a str) -> Circuit<'a> {
+pub fn parse(i: &str) -> Circuit<'_> {
     let mut states: BTreeMap<&str, State> = Default::default();
     let mut zs = vec![];
     let mut ys = vec![];
@@ -92,8 +93,8 @@ pub fn parse<'a>(i: &'a str) -> Circuit<'a> {
         }
         let (input, value) = line.trim().split_once(": ").expect("could not find input");
         let val = match value {
-            "0" => {false},
-            "1" => {true},
+            "0" => false,
+            "1" => true,
             _ => panic!("invalid input value"),
         };
         states.insert(input, State::Value(val));
@@ -104,7 +105,6 @@ pub fn parse<'a>(i: &'a str) -> Circuit<'a> {
         } else if input.starts_with('y') {
             ys.push(input);
         }
-
     }
     for line in lines.by_ref() {
         let tokens: Vec<_> = line.split_whitespace().collect();
@@ -126,14 +126,12 @@ pub fn parse<'a>(i: &'a str) -> Circuit<'a> {
     xs.reverse();
     ys.sort();
     ys.reverse();
-    Circuit{states, xs, zs, ys}
+    Circuit { states, xs, zs, ys }
 }
-
 
 pub fn part1<'a: 'b, 'b>(i: &'b Circuit<'a>) -> usize {
     let mut circuit = i.clone();
-    let out = circuit.get_z();
-    out
+    circuit.get_z()
 }
 
 fn count_defects<'a>(c: &'a Circuit) -> BTreeMap<Vec<&'a str>, Vec<(usize, usize)>> {
@@ -162,19 +160,20 @@ pub fn part2<'a: 'b, 'b>(input: &'b Circuit<'a>) -> String {
         ["z07", "rts"],
         ["z12", "jpj"],
         ["z26", "kgj"],
-        ["chv", "vvw"] ];
+        ["chv", "vvw"],
+    ];
     for [t1, t2] in swaps {
         let s1 = c.states.remove(t1).unwrap();
         let s2 = c.states.remove(t2).unwrap();
         c.states.insert(t1, s2);
         c.states.insert(t2, s1);
     }
-    
-    // I've used this code to generate a graph of dependencies for every 
+
+    // I've used this code to generate a graph of dependencies for every
     // output and a list of faulty outputs for every input pin.
     //
     // The list of faulty outputs can be used to detect which two pins are affected
-    // by a given output. Then, the graph is used to select two candidate pins to 
+    // by a given output. Then, the graph is used to select two candidate pins to
     // swap.
     //
     // This whole process could be automated, but some pin swaps generate loops, which end
@@ -184,7 +183,7 @@ pub fn part2<'a: 'b, 'b>(input: &'b Circuit<'a>) -> String {
         let mut graph: BTreeMap<&str, Vec<&str>> = Default::default();
         for (output, state) in &c.states {
             match state {
-                State::Value(_) => {},
+                State::Value(_) => {}
                 State::And(a, b) | State::Or(a, b) | State::Xor(a, b) => {
                     graph.entry(output).or_default().extend([a, b]);
                 }

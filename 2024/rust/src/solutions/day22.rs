@@ -37,9 +37,9 @@ pub fn part2(i: &[usize]) -> usize {
         let mut secret = *secret;
         let mut window = [0isize; 4];
         let mut last_val = 0isize;
-        for t in 0..3 {
+        for w in window.iter_mut().take(3) {
             let new_val = (secret % 10) as isize;
-            window[t] = new_val - last_val;
+            *w = new_val - last_val;
             last_val = new_val;
             secret = evolve(secret);
         }

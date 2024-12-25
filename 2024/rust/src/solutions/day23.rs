@@ -1,13 +1,12 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 pub fn parse(i: &str) -> HashMap<&str, HashSet<&str>> {
     let mut graph: HashMap<&str, HashSet<&str>> = Default::default();
-    i.lines().filter(|line| !line.is_empty())
-        .for_each(|line| {
-            let (a, b) = line.split_once("-").expect("no edge on this line");
-            graph.entry(a).or_default().insert(b);
-            graph.entry(b).or_default().insert(a);
-        });
+    i.lines().filter(|line| !line.is_empty()).for_each(|line| {
+        let (a, b) = line.split_once("-").expect("no edge on this line");
+        graph.entry(a).or_default().insert(b);
+        graph.entry(b).or_default().insert(a);
+    });
     graph
 }
 
@@ -20,7 +19,7 @@ pub fn part1(g: &HashMap<&str, HashSet<&str>>) -> usize {
         let first_hop = g.get(candidate).unwrap();
         for first in first_hop {
             if first.starts_with("t") && first <= candidate {
-                continue
+                continue;
             }
             for second in first_hop {
                 if first >= second || (second.starts_with("t") && second <= candidate) {
@@ -46,12 +45,9 @@ pub fn part2(g: &HashMap<&str, HashSet<&str>>) -> String {
     let mut maximal = vec![];
 
     for node in candidates.into_iter().skip(1) {
-        let Some(edges) = g.get(node) else {
-            continue
-        };
+        let Some(edges) = g.get(node) else { continue };
         let mut found = vec![vec![node]];
-        'groups:
-        for group in groups.iter() {
+        'groups: for group in groups.iter() {
             for g in group {
                 if !edges.contains(g) {
                     continue 'groups;
