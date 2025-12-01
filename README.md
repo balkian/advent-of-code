@@ -5,6 +5,8 @@ I mostly use AoC as a way to learn new languages, so don't expect quality or idi
 
 So far I've done:
 
+* 2025
+  - [Rust](./2025/rust) (**In progress**)
 * 2024
   - [Rust](./2024/rust) (**Complete**)
 * 2023
@@ -24,7 +26,7 @@ So far I've done:
   - [Rust](./2015/rust). (**Complete**, but I took a long break in between, so the solutions use two different project structures.
 
 ## Project structure
-### Rust (2016, 2018, 2021, 2022, 2023, 2024)
+### Rust (2016, 2018, 2021, 2022, 2023, 2024, 2025)
 
 These Rust solutions use the `aoc_utils` crate (`utils/rust`).
 The solutions for each day are in a file named `src/solutions/day<number>.rs`.
