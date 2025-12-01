@@ -6,7 +6,7 @@ I mostly use AoC as a way to learn new languages, so don't expect quality or idi
 So far I've done:
 
 * 2024
-  - [Rust](./2024/rust) (**In progress**)
+  - [Rust](./2024/rust) (**Complete**)
 * 2023
   - [Rust](./2023/rust) (**Complete**)
 * 2022

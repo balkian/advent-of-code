@@ -49,5 +49,36 @@ pub fn part1(rotations: &[Rotation]) -> usize {
 }
 
 pub fn part2(rotations: &[Rotation]) -> usize {
-    todo!();
+    let mut dial = 50;
+    let mut zeros = 0;
+
+    for rot in rotations {
+        match rot {
+            Rotation::Left(turns) => {
+                zeros += turns.div_euclid(MAX_DIAL);
+                let turns = turns % MAX_DIAL;
+                if turns > dial {
+                    if dial > 0 {
+                        zeros += 1;
+                    }
+                    dial += MAX_DIAL - turns;
+                } else {
+                    dial -= turns;
+                    if dial == 0 {
+                        zeros += 1;
+                    }
+                }
+            },
+            Rotation::Right(turns) => {
+                zeros += turns.div_euclid(MAX_DIAL);
+                let turns = turns % MAX_DIAL;
+                dial += turns;
+            }
+        }
+        if dial >= MAX_DIAL {
+            zeros += 1;
+            dial -= MAX_DIAL;
+        }
+    }
+    zeros
 }

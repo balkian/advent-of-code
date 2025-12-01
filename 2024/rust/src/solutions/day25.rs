@@ -52,6 +52,7 @@ pub fn part1(i: &Input) -> usize {
     }
     total_pairs
 }
-pub fn part2(_i: &Input) -> usize {
-    todo!();
+
+pub fn part2(_i: &Input) -> &str {
+    "Done!"
 }
