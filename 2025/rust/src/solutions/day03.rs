@@ -26,32 +26,29 @@ pub fn part1(banks: &[Vec<usize>]) -> usize {
         }).sum()
 }
 
-fn joltage(positions: &[usize], batteries: &[usize]) -> usize {
-    positions.iter().fold(0, |acc, jolts| {
-        acc * 10 + batteries[*jolts]
+fn maxdigit(bank: &[usize], start: usize, end: usize) -> (usize, usize) {
+    bank[start..end].iter().enumerate().rev().fold((usize::MAX, 0), |(maxidx, max), (idx, val)| {
+        if *val >= max {
+            (idx, *val)
+        } else {
+            (maxidx, max)
+        }
     })
 }
 
 pub fn part2(banks: &[Vec<usize>]) -> usize {
-    banks.iter()
+    let res = banks.iter()
         .map(|bank| {
-            let mut chosen: [usize; 12] = std::array::from_fn(|i| i);
-            for start in 1..=bank.len()-chosen.len() {
-                let mut left = chosen[0];
-                let mut right = start;
-
-                for cur in chosen.iter_mut() {
-                    *cur = left;
-                    for option in left+1..=right {
-                        if bank[option] > bank[*cur] {
-                            *cur = option;
-                        }
-                    }
-                    left = *cur + 1;
-                    right += 1;
-                }
+            let mut joltage = 0;
+            let mut start = 0;
+            for i in (0..12).rev() {
+                let end = bank.len() - i;
+                let (delta, max) = maxdigit(bank, start, end);
+                joltage = joltage *10 + max;
+                start += delta + 1;
             }
-            //let chosenbank: Vec<usize> = chosen.iter().map(|c| bank[*c]).collect();
-            joltage(&chosen, bank)
-        }).sum()
+
+            joltage
+        }).sum();
+    res
 }
