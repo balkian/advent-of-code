@@ -24,10 +24,12 @@ pub fn part1(map: &[Vec<bool>]) -> usize {
             if !cell {
                 continue;
             }
-            let filled = neighbors((i, j), (map.len(), row.len()))
+            if neighbors((i, j), (map.len(), row.len()))
                 .filter(|(nx, ny)| map[*nx][*ny])
-                .count();
-            if filled < 4 {
+                .take(4)
+                .count()
+                < 4
+            {
                 //eprintln!("({i}, {j}) {filled}");
                 total += 1;
             }
@@ -38,26 +40,63 @@ pub fn part1(map: &[Vec<bool>]) -> usize {
 
 pub fn part2(map: &[Vec<bool>]) -> usize {
     let mut total = 0;
-    let mut map: Vec<Vec<bool>> = map.to_vec();
     let ml = map.len();
     let rl = if ml > 0 { map[0].len() } else { 0 };
-    loop {
+    let mut counts: Vec<Vec<_>> = map
+        .iter()
+        .enumerate()
+        .map(|(ix, row)| {
+            row.iter()
+                .enumerate()
+                .map(|(jx, cell)| {
+                    cell.then(|| {
+                        neighbors((ix, jx), (ml, rl))
+                            .filter(|(nx, ny)| map[*nx][*ny])
+                            .count()
+                    })
+                })
+                .collect()
+        })
+        .collect();
+    let mut min_x = 0;
+    let mut max_x = ml;
+    let mut min_y = 0;
+    let mut max_y = rl;
+
+    while (min_x <= max_x) && (min_y <= max_y) {
+        let mut nmin_x = usize::MAX;
+        let mut nmin_y = usize::MAX;
+
+        let mut nmax_x = usize::MIN;
+        let mut nmax_y = usize::MIN;
+
         let mut removed = 0;
-        for i in 0..ml {
-            for j in 0..rl {
-                let cell = map[i][j];
-                if !cell {
+
+        for i in min_x..max_x {
+            for j in min_y..max_y {
+                let Some(count) = counts[i][j] else {
                     continue;
-                }
-                if neighbors((i, j), (map.len(), rl))
-                    .filter(|(nx, ny)| map[*nx][*ny])
-                    .take(4)
-                    .count()
-                    < 4
-                {
-                    //eprintln!("({i}, {j}) {filled}");
+                };
+                if count < 4 {
+                    counts[i][j] = None;
                     removed += 1;
-                    map[i][j] = false;
+
+                    for (nx, ny) in neighbors((i, j), (ml, rl)) {
+                        match counts[nx][ny].as_mut() {
+                            Some(count @ 1..) => {
+                                *count -= 1;
+                                nmin_x = nmin_x.min(nx);
+                                nmin_y = nmin_y.min(ny);
+
+                                nmax_x = nmax_x.max(nx + 1);
+                                nmax_y = nmax_y.max(ny + 1);
+                            }
+                            Some(0) => {
+                                panic!("This should never happen");
+                            }
+                            _ => {}
+                        };
+                    }
                 }
             }
         }
@@ -65,6 +104,10 @@ pub fn part2(map: &[Vec<bool>]) -> usize {
             break;
         }
         total += removed;
+        max_x = nmax_x;
+        max_y = nmax_y;
+        min_x = nmin_x;
+        min_y = nmin_y;
     }
     total
 }
