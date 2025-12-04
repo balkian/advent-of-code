@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 pub fn parse(input: &str) -> Vec<Vec<bool>> {
     input
         .lines()
@@ -58,56 +60,37 @@ pub fn part2(map: &[Vec<bool>]) -> usize {
                 .collect()
         })
         .collect();
-    let mut min_x = 0;
-    let mut max_x = ml;
-    let mut min_y = 0;
-    let mut max_y = rl;
 
-    while (min_x <= max_x) && (min_y <= max_y) {
-        let mut nmin_x = usize::MAX;
-        let mut nmin_y = usize::MAX;
+    let mut pending: BTreeSet<(usize, usize)> = counts
+        .iter()
+        .enumerate()
+        .flat_map(|(x, row)| {
+            row.iter()
+                .enumerate()
+                .filter_map(move |(y, cell)| cell.map(|_| (x, y)))
+        })
+        .collect();
 
-        let mut nmax_x = usize::MIN;
-        let mut nmax_y = usize::MIN;
-
-        let mut removed = 0;
-
-        for i in min_x..max_x {
-            for j in min_y..max_y {
-                let Some(count) = counts[i][j] else {
-                    continue;
-                };
-                if count < 4 {
-                    counts[i][j] = None;
-                    removed += 1;
-
-                    for (nx, ny) in neighbors((i, j), (ml, rl)) {
-                        match counts[nx][ny].as_mut() {
-                            Some(count @ 1..) => {
-                                *count -= 1;
-                                nmin_x = nmin_x.min(nx);
-                                nmin_y = nmin_y.min(ny);
-
-                                nmax_x = nmax_x.max(nx + 1);
-                                nmax_y = nmax_y.max(ny + 1);
-                            }
-                            Some(0) => {
-                                panic!("This should never happen");
-                            }
-                            _ => {}
-                        };
+    while let Some((i, j)) = pending.pop_first() {
+        let Some(count) = counts[i][j] else {
+            continue;
+        };
+        if count < 4 {
+            counts[i][j] = None;
+            total += 1;
+            for (nx, ny) in neighbors((i, j), (ml, rl)) {
+                match counts[nx][ny].as_mut() {
+                    Some(count @ 1..) => {
+                        *count -= 1;
+                        pending.insert((nx, ny));
                     }
-                }
+                    Some(0) => {
+                        panic!("we should never get under 0");
+                    }
+                    _ => {}
+                };
             }
         }
-        if removed == 0 {
-            break;
-        }
-        total += removed;
-        max_x = nmax_x;
-        max_y = nmax_y;
-        min_x = nmin_x;
-        min_y = nmin_y;
     }
     total
 }
