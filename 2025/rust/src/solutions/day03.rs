@@ -37,7 +37,8 @@ fn maxdigit(bank: &[usize], start: usize, end: usize) -> (usize, usize) {
 }
 
 pub fn part2(banks: &[Vec<usize>]) -> usize {
-    let res = banks.iter()
+    
+    banks.iter()
         .map(|bank| {
             let mut joltage = 0;
             let mut start = 0;
@@ -49,6 +50,5 @@ pub fn part2(banks: &[Vec<usize>]) -> usize {
             }
 
             joltage
-        }).sum();
-    res
+        }).sum()
 }
