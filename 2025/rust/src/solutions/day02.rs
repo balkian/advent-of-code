@@ -3,10 +3,14 @@ use std::ops::RangeInclusive;
 type ValidRange = RangeInclusive<usize>;
 
 pub fn parse(input: &str) -> Vec<ValidRange> {
-    input.trim().split(',').map(|range| {
-        let (start, end) = range.split_once('-').expect("There should only be ranges");
-        start.parse().expect("invalid number")..=end.parse().expect("invalid number")
-    }).collect()
+    input
+        .trim()
+        .split(',')
+        .map(|range| {
+            let (start, end) = range.split_once('-').expect("There should only be ranges");
+            start.parse().expect("invalid number")..=end.parse().expect("invalid number")
+        })
+        .collect()
 }
 
 pub fn part1(ranges: &[ValidRange]) -> usize {
@@ -21,18 +25,16 @@ pub fn part1(ranges: &[ValidRange]) -> usize {
 
                 (mid > 0) && st[..mid] == st[mid..]
             })
-        }).sum()
+        })
+        .sum()
 }
 
 pub fn part2(ranges: &[ValidRange]) -> usize {
     ranges
         .iter()
         .cloned()
-        .flat_map(|range| {
-            range.filter(|&num| {
-                filter_str(num)
-            })
-        }).sum()
+        .flat_map(|range| range.filter(|&num| filter_str(num)))
+        .sum()
 }
 
 #[allow(unused)]
@@ -64,7 +66,7 @@ pub fn filter_num(num: usize) -> bool {
 pub fn filter_str(num: usize) -> bool {
     let st = num.to_string();
     let st = st.as_bytes();
-    'stems: for stemsize in 1..=st.len()/2 {
+    'stems: for stemsize in 1..=st.len() / 2 {
         let mut chunks = st.chunks(stemsize);
         let stem = chunks.next().expect("len should be at least 2");
 

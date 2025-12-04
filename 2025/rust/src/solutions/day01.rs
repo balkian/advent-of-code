@@ -4,22 +4,17 @@ pub enum Rotation {
 }
 
 pub fn parse(input: &str) -> Vec<Rotation> {
-    input.lines()
+    input
+        .lines()
         .filter(|line| !line.is_empty())
-        .map(|line| {
-            match line.as_bytes()[0] {
-                b'R' => {
-                    Rotation::Right(line[1..].trim().parse().unwrap())
-                },
-                b'L' => {
-                    Rotation::Left(line[1..].trim().parse().unwrap())
-                },
-                line => {
-                    panic!("wrong input {line}");
-                }
+        .map(|line| match line.as_bytes()[0] {
+            b'R' => Rotation::Right(line[1..].trim().parse().unwrap()),
+            b'L' => Rotation::Left(line[1..].trim().parse().unwrap()),
+            line => {
+                panic!("wrong input {line}");
             }
-
-        }).collect()
+        })
+        .collect()
 }
 
 const MAX_DIAL: usize = 100;
@@ -33,7 +28,7 @@ pub fn part1(rotations: &[Rotation]) -> usize {
             Rotation::Left(turns) => {
                 let turns = turns % MAX_DIAL;
                 dial = (dial + MAX_DIAL - turns) % MAX_DIAL;
-            },
+            }
             Rotation::Right(turns) => {
                 let turns = turns % MAX_DIAL;
                 dial = (dial + turns) % MAX_DIAL;
@@ -42,7 +37,6 @@ pub fn part1(rotations: &[Rotation]) -> usize {
         if dial == 0 {
             zeros += 1;
         }
-
     }
 
     zeros
@@ -68,7 +62,7 @@ pub fn part2(rotations: &[Rotation]) -> usize {
                         zeros += 1;
                     }
                 }
-            },
+            }
             Rotation::Right(turns) => {
                 zeros += turns.div_euclid(MAX_DIAL);
                 let turns = turns % MAX_DIAL;
