@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 aoc_utils = { path = "../../utils/rust/aoc_utils"}
+nom = "8.0.0"
 
 [build-dependencies]
 aoc_builder = { path = "../../utils/rust/aoc_builder" }
