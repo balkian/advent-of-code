@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 type Pos = (isize, isize);
 type Input = (Pos, HashSet<Pos>);
@@ -41,5 +41,16 @@ pub fn part1((start, splitters): &Input) -> usize {
 }
 
 pub fn part2((start, splitters): &Input) -> usize {
-    todo!()
+    let mut beams = HashMap::new();
+    beams.insert(start.1, 1);
+    let maxlevel: isize = splitters.iter().map(|(level, _)| level).max().copied().unwrap_or_default();
+
+    for level in start.0..=maxlevel {
+        let split: Vec<_> = beams.extract_if(|x, _| splitters.contains(&(level, *x))).collect();
+        for (x, val) in split {
+            *beams.entry(x-1).or_default() += val;
+            *beams.entry(x+1).or_default() += val;
+        }
+    }
+    beams.values().sum()
 }
